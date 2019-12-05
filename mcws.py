@@ -168,10 +168,12 @@ async def hello(ws, path):
                                 await ws.send(info('[§c{0}§d] - {1}'.format(i, midils[i])))
                         elif args[1] == "-stop":
                             player.stop()
+                            await ws.send(info("正在停止"))
                         else:
                             arg1 = int(args[1])
                             if arg1 < len(midils):
                                 await ws.send(info("正在加载 " + midils[arg1] + ".mid ..."))
+                                player.stop()
                                 player.set_midi(midils[arg1])
                                 player.play()
                                 await ws.send(miidDisplay())
