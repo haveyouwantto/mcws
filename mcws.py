@@ -172,7 +172,7 @@ async def hello(ws, path):
                         else:
                             arg1 = int(args[1])
                             if arg1 < len(midils):
-                                await ws.send(info("正在加载 " + midils[arg1] + ".mid ..."))
+                                await ws.send(info("正在加载 " + midils[arg1] + "..."))
                                 player.stop()
                                 player.set_midi(midils[arg1])
                                 player.play()
