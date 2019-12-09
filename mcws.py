@@ -43,10 +43,10 @@ sub = json.dumps({
 })
 
 helpmsg = {
-    '.test': '测试用命令    \u00a7c.test',
+    '.info': '显示信息    \u00a7c.info',
     '.help': '提供帮助/命令列表    \u00a7c.help',
     '.function': '运行在相应的功能文件中找到的命令    \u00a7c.function <function>',
-    '.midi': '播放一个mid文件    \u00a7c.midi <file>'
+    '.midi': 'mcws midi 模块    \u00a7c.midi [命令]'
 }
 
 play = True
@@ -124,8 +124,8 @@ async def hello(ws, path):
 
                 args = raw.split(" ")
 
-                if (args[0] == ".test"):
-                    await ws.send(info("Hello World"))
+                if args[0] == ".info":
+                    await ws.send(info("\u00a76mcws by HYWT"))
 
                 if args[0] == ".help":
                     for i in helpmsg:
@@ -135,7 +135,7 @@ async def hello(ws, path):
                     log.close()
                     sys.exit()
 
-                if raw.startswith(".function"):
+                if args[0] == ".function":
                     arg1 = raw[10:]
                     if arg1 == "-ls":
                         for filename in glob.glob("functions/*.mcfunction"):
@@ -148,7 +148,7 @@ async def hello(ws, path):
                         else:
                             await ws.send(info("文件不存在"))
 
-                if raw.startswith(".midi"):
+                if args[0] == ".midi":
                     try:
                         await player.parseCmd(args[1:])
 
@@ -156,6 +156,8 @@ async def hello(ws, path):
                         await ws.send(info(str(e)))
 
                 if args[0] == ".sier":
+                    pass
+                    '''
                     px = 50200
                     py = 100
                     pz = 50000
@@ -163,7 +165,7 @@ async def hello(ws, path):
                         for z in range(-50, 50):
                             y = x ^ z
                             await ws.send(setBlock(px + x, py + y, pz + z, "redstone_block"))
-                            time.sleep(0.001)
+                            time.sleep(0.001)'''
 
         elif msg["header"]["messagePurpose"] == "commandResponse":
             pass
@@ -171,8 +173,11 @@ async def hello(ws, path):
 
 if __name__ == '__main__':
 
-    start_server = websockets.serve(hello, "0.0.0.0", 19111)
-    print('/connect 127.0.0.1:19111')
+    try:
+        start_server = websockets.serve(hello, "0.0.0.0", 19111)
+        print('/connect 127.0.0.1:19111')
 
-    asyncio.get_event_loop().run_until_complete(start_server)
-    asyncio.get_event_loop().run_forever()
+        asyncio.get_event_loop().run_until_complete(start_server)
+        asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt:
+        sys.exit()
