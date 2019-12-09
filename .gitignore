@@ -1,4 +1,5 @@
 midis/*
 functions/*
 .idea/
+__pycache__/*
 log.txt
