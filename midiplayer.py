@@ -11,14 +11,14 @@ import mcws
 
 class MidiPlayer(threading.Thread):
     helpmsg = {
-        'mcws midi模块': "",
+        'mcws midi模块': '在Minecraft中播放mid音乐',
         '-info': '显示信息    \u00a7c-info',
         '-help': '提供帮助/命令列表    \u00a7c-help',
         '-play': '播放一个mid文件    \u00a7c-play <ID>',
         '-stop': '停止播放    \u00a7c-stop',
         '-list': '列出mid文件    \u00a7c-list [页码]',
         '-search': '搜索mid文件    \u00a7c-search <内容>',
-        '-reload':'重新加载mid文件列表    \u00a7c-reload'
+        '-reload': '重新加载mid文件列表    \u00a7c-reload'
     }
 
     def __init__(self, ws):
@@ -27,8 +27,10 @@ class MidiPlayer(threading.Thread):
         self.playing = False
         self.mid = None
         self.setName('Midi Player Thread')
+        self.setDaemon(True)
         self.isPlaying = False
         self.midils = glob.glob("midis/**/*.mid", recursive=True)
+        self.isClosed = False
 
     async def play_note(self, midimsg, inst):
         origin = midimsg.note - 66
@@ -128,7 +130,7 @@ class MidiPlayer(threading.Thread):
                     await self.ws.send(mcws.info('ID 无效'))
 
             elif args[0] == "-search":
-                if args[1:]==[]:
+                if args[1:] == []:
                     await self.ws.send(mcws.info('搜索内容不能为空'))
                     return
                 keyword = "".join(args[1:]).lower()
@@ -136,7 +138,7 @@ class MidiPlayer(threading.Thread):
                 for i in range(len(self.midils)):
                     if keyword in self.midils[i].lower():
                         results.append((i, self.midils[i]))
-                if len(results)==0:
+                if len(results) == 0:
                     await self.ws.send(mcws.info('未找到任何结果'))
                 for i in results:
                     await self.ws.send(mcws.info('[§c{0}§d] - {1}'.format(i[0], i[1])))
@@ -147,6 +149,9 @@ class MidiPlayer(threading.Thread):
                 await self.ws.send(mcws.info('未知命令。'))
         except IndexError:
             await self.help()
+
+    def close(self):
+        self.isClosed = True
 
 
 def nextItem(_list, start):

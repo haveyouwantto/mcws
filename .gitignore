@@ -1,5 +1,8 @@
 midis/*
 functions/*
 .idea/
-__pycache__/*
+__pycache__/
+cache/*
+chat_logs/*
 log.txt
+login.txt
