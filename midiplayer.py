@@ -68,6 +68,7 @@ class MidiPlayer(threading.Thread):
                     traceback.print_exc()
                     mcws.runmain(self.ws.send(message_utils.info(e)))
                     self.mid = None
+                    self.isPlaying = False
                     self.playing = False
             else:
                 time.sleep(0.05)
