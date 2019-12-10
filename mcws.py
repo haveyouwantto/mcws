@@ -61,9 +61,6 @@ async def hello(ws, path):
                         for i in ref_strings.mcws.help:
                             await ws.send(message_utils.info(i + " - " + ref_strings.mcws.help[i]))
 
-                    if args[0] == ".exit":
-                        raise KeyboardInterrupt
-
                     if args[0] == ".function":
                         arg1 = raw[10:]
                         if arg1 == "-ls":
@@ -100,7 +97,7 @@ async def hello(ws, path):
                 pass
     except (KeyboardInterrupt, websockets.exceptions.ConnectionClosedOK, websockets.exceptions.ConnectionClosedError,
             websockets.exceptions.ConnectionClosed):
-        player.join()
+        player.close()
         log.close()
         sys.exit()
 

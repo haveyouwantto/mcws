@@ -21,8 +21,10 @@ class ChatLogger:
             self.players.append(fileutils.getCleanName(i))
 
     def authenticate(self):
-        account_details = open('login.txt', 'r').read().split(':')
-        self.account = xbox.client.authenticate(login=account_details[0], password=account_details[1])
+        with open('login.txt', 'r') as ld:
+            account_details = ld.read().split(':')
+            self.account = xbox.client.authenticate(
+                login=account_details[0], password=account_details[1])
 
     async def getHost(self):
         await self.ws.send(message_utils.cmd('testfor @s'))
@@ -63,7 +65,7 @@ class ChatLogger:
             info['receiver'] = prop['Receiver']
 
         self.chatmsg['messages'].append(info)
-        print(info)
+        print('<{0}> {1}'.format(sender, message))
 
     def close(self):
         localTime = time.localtime(float(self.chatmsg['time']))
@@ -79,7 +81,8 @@ class ChatLogger:
             shutil.copyfile('template/' + file, out + file)
 
         for name in self.players:
-            shutil.copyfile('cache/avatar/' + name + '.png', os.path.join(out, 'avatar/', name + '.png'))
+            shutil.copyfile('cache/avatar/' + name + '.png',
+                            os.path.join(out, 'avatar/', name + '.png'))
 
         outjson = json.dumps(self.chatmsg)
         datajs = open(out + 'data.js', 'w', encoding='utf-8-sig')
