@@ -9,6 +9,8 @@ import xbox
 import avatar_downloader as avatar
 import mcws
 import fileutils
+import message_utils
+import ref_strings
 
 
 class ChatLogger:
@@ -23,7 +25,7 @@ class ChatLogger:
         self.account = xbox.client.authenticate(login=account_details[0], password=account_details[1])
 
     async def getHost(self):
-        await self.ws.send(mcws.cmd('testfor @s'))
+        await self.ws.send(message_utils.cmd('testfor @s'))
         msg = await self.ws.recv()
         print(msg)
         self.host = json.loads(msg)['body']['victim'][0]

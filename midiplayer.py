@@ -1,25 +1,19 @@
 import glob
 import math
 import threading
+import time
+import traceback
 
 import mido
 
 import drum_set
 import instruments_map
 import mcws
+import message_utils
+import ref_strings
 
 
 class MidiPlayer(threading.Thread):
-    helpmsg = {
-        'mcws midi模块': '在Minecraft中播放mid音乐',
-        '-info': '显示信息    \u00a7c-info',
-        '-help': '提供帮助/命令列表    \u00a7c-help',
-        '-play': '播放一个mid文件    \u00a7c-play <ID>',
-        '-stop': '停止播放    \u00a7c-stop',
-        '-list': '列出mid文件    \u00a7c-list [页码]',
-        '-search': '搜索mid文件    \u00a7c-search <内容>',
-        '-reload': '重新加载mid文件列表    \u00a7c-reload'
-    }
 
     def __init__(self, ws):
         threading.Thread.__init__(self)
@@ -31,6 +25,8 @@ class MidiPlayer(threading.Thread):
         self.isPlaying = False
         self.midils = glob.glob("midis/**/*.mid", recursive=True)
         self.isClosed = False
+        self.searchResult = []
+        self.lastQuery = ""
 
     async def play_note(self, midimsg, inst):
         origin = midimsg.note - 66
@@ -38,14 +34,16 @@ class MidiPlayer(threading.Thread):
         pitch = 2 ** ((origin + instrument[1]) / 12)
         volume = midimsg.velocity / 128
         await self.ws.send(
-            mcws.cmd("execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^0 ^ ^ " + str(volume) + " " + str(pitch)))
+            message_utils.cmd(
+                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^0 ^ ^ " + str(volume) + " " + str(pitch)))
 
     async def play_perc(self, midimsg):
         instrument = drum_set.drum_set[midimsg.note]
         pitch = 2 ** (instrument[1] / 12)
         volume = midimsg.velocity / 128
         await self.ws.send(
-            mcws.cmd("execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^0 ^ ^ " + str(volume) + " " + str(pitch)))
+            message_utils.cmd(
+                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^0 ^ ^ " + str(volume) + " " + str(pitch)))
 
     def run(self):
         while True:
@@ -54,6 +52,9 @@ class MidiPlayer(threading.Thread):
                 self.isPlaying = True
                 try:
                     for msg in self.mid.play():
+                        if not self.playing:
+                            self.isPlaying = False
+                            break
                         if msg.type == "note_on" and msg.velocity != 0:
                             if msg.channel != 9:
                                 mcws.runmain(
@@ -63,13 +64,13 @@ class MidiPlayer(threading.Thread):
                         if msg.type == "program_change":
                             inst[msg.channel] = msg.program
                             print(inst)
-                        if not self.playing:
-                            self.isPlaying = False
-                            break
                 except Exception as e:
-                    mcws.runmain(self.ws.send(mcws.info(e)))
+                    traceback.print_exc()
+                    mcws.runmain(self.ws.send(message_utils.info(e)))
                     self.mid = None
                     self.playing = False
+            else:
+                time.sleep(0.05)
 
     def set_midi(self, mid):
         self.mid = mido.MidiFile(mid)
@@ -78,16 +79,16 @@ class MidiPlayer(threading.Thread):
         self.playing = True
 
     async def stop(self):
-        await self.ws.send(mcws.info("正在停止"))
+        await self.ws.send(message_utils.info(ref_strings.midiplayer.stopping))
         self.playing = False
         while self.isPlaying:
-            pass
-        await self.ws.send(mcws.info("已停止"))
+            time.sleep(0.05)
+        await self.ws.send(message_utils.info(ref_strings.midiplayer.stopped))
         return
 
     async def help(self):
-        for i in MidiPlayer.helpmsg:
-            await self.ws.send(mcws.info(i + " - " + MidiPlayer.helpmsg[i]))
+        for i in ref_strings.midiplayer.help:
+            await self.ws.send(message_utils.info(i + " - " + ref_strings.midiplayer.help[i]))
 
     async def parseCmd(self, args):
 
@@ -96,66 +97,65 @@ class MidiPlayer(threading.Thread):
                 await self.help()
 
             elif args[0] == "-info":
-                await self.ws.send(mcws.info("\u00a76mcws midi模块 \u00a7bby HYWT"))
+                await self.ws.send(message_utils.info(ref_strings.midiplayer.info))
 
             elif args[0] == "-list":
-                try:
-                    page = 1
-                    if len(args) != 1:
-                        page = int(args[1])
-                    iterator = nextItem(self.midils, (page - 1) * 10)
-                    for i in range(10):
-                        num = (page - 1) * 10 + i
-                        await self.ws.send(mcws.info('[§c{0}§d] - {1}'.format(num, next(iterator))))
-                    await self.ws.send(mcws.info('第 {0} 页，共 {1} 页'.format(page, math.ceil(len(self.midils) / 10))))
-                except StopIteration as e:
-                    pass
-                except ValueError as e:
-                    await self.ws.send(mcws.info('页数无效'))
+                page = 1
+                if len(args) != 1:
+                    page = int(args[1])
+                entries = message_utils.getPage(self.midils, page)
+                await message_utils.printEntries(self.ws, entries)
 
             elif args[0] == "-stop":
                 await self.stop()
 
             elif args[0] == "-play":
-                try:
-                    arg1 = int(args[1])
-                    if arg1 < len(self.midils):
-                        await self.stop()
-                        await self.ws.send(mcws.info("正在加载 " + self.midils[arg1] + "..."))
-                        self.set_midi(self.midils[arg1])
-                        self.play()
-                    else:
-                        await self.ws.send(mcws.info("文件不存在"))
-                except ValueError:
-                    await self.ws.send(mcws.info('ID 无效'))
+                arg1 = int(args[1])
+                if arg1 < len(self.midils):
+                    await self.stop()
+                    await self.ws.send(
+                        message_utils.info(ref_strings.midiplayer.load_song.format(self.midils[arg1])))
+                    self.set_midi(self.midils[arg1])
+                    self.play()
+                else:
+                    await self.ws.send(message_utils.error(ref_strings.file_not_exists))
 
             elif args[0] == "-search":
                 if args[1:] == []:
-                    await self.ws.send(mcws.info('搜索内容不能为空'))
+                    await self.ws.send(message_utils.error(ref_strings.search_error))
                     return
-                keyword = "".join(args[1:]).lower()
-                results = []
-                for i in range(len(self.midils)):
-                    if keyword in self.midils[i].lower():
-                        results.append((i, self.midils[i]))
+                keyword = " ".join(args[1:]).lower()
+                results = self.searchMidi(keyword)
                 if len(results) == 0:
-                    await self.ws.send(mcws.info('未找到任何结果'))
-                for i in results:
-                    await self.ws.send(mcws.info('[§c{0}§d] - {1}'.format(i[0], i[1])))
+                    await self.ws.send(message_utils.error(ref_strings.empty_result))
+                else:
+                    for i in results:
+                        await self.ws.send(
+                            message_utils.info('[§c{0}§d] - {1}'.format(i[0], i[1])))
             elif args[0] == "-reload":
-                self.midils = glob.glob("midis/**/*.mid", recursive=True)
-                await self.ws.send(mcws.info('mid文件列表已重新加载。'))
+                await self.reload()
             else:
-                await self.ws.send(mcws.info('未知命令。'))
+                await self.ws.send(message_utils.error(ref_strings.unknown_command))
         except IndexError:
             await self.help()
+        except ValueError:
+            await self.ws.send(message_utils.error(ref_strings.midiplayer.invaild_id))
+        except FileNotFoundError:
+            await self.ws.send(message_utils.error(ref_strings.file_not_exists))
+            await self.reload()
 
     def close(self):
         self.isClosed = True
 
+    def searchMidi(self, keyword):
+        self.lastQuery = keyword
+        results = []
+        for i in range(len(self.midils)):
+            if keyword in self.midils[i].lower():
+                results.append((i, self.midils[i]))
+        return results
 
-def nextItem(_list, start):
-    index = start
-    while index < len(_list):
-        yield _list[index]
-        index += 1
+    async def reload(self):
+
+        self.midils = glob.glob("midis/**/*.mid", recursive=True)
+        await self.ws.send(message_utils.info(ref_strings.midiplayer.reload))
