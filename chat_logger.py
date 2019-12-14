@@ -4,9 +4,9 @@ import os
 import time
 import shutil
 
-import xbox
+#import xbox
 
-import avatar_downloader as avatar
+import avatardownload as avatar
 import mcws
 import fileutils
 import message_utils
@@ -19,12 +19,6 @@ class ChatLogger:
         self.players = []
         for i in glob.glob('cache/avatar/*.png'):
             self.players.append(fileutils.getCleanName(i))
-
-    def authenticate(self):
-        with open('login.txt', 'r') as ld:
-            account_details = ld.read().split(':')
-            self.account = xbox.client.authenticate(
-                login=account_details[0], password=account_details[1])
 
     async def getHost(self):
         await self.ws.send(message_utils.cmd('testfor @s'))
@@ -68,24 +62,31 @@ class ChatLogger:
         print('<{0}> {1}'.format(sender, message))
 
     def close(self):
-        localTime = time.localtime(float(self.chatmsg['time']))
-        date = time.strftime('%Y-%m-%d_%H-%M-%S', localTime)
+        if self.chatmsg['messages']!=[]:
+            localTime = time.localtime(float(self.chatmsg['time']))
+            date = time.strftime('%Y-%m-%d_%H-%M-%S', localTime)
 
-        out = 'chat_logs/' + date + '/'
+            out = 'chat_logs/' + date + '/'
 
-        if not os.path.exists(out):
-            os.makedirs(out)
-            os.makedirs(os.path.join(out, 'avatar/'))
+            if not os.path.exists(out):
+                os.makedirs(out)
+                os.makedirs(os.path.join(out, 'avatar/'))
 
-        for file in os.listdir('template/'):
-            shutil.copyfile('template/' + file, out + file)
+            for file in os.listdir('template/'):
+                shutil.copyfile('template/' + file, out + file)
 
-        for name in self.players:
-            shutil.copyfile('cache/avatar/' + name + '.png',
-                            os.path.join(out, 'avatar/', name + '.png'))
+            for name in self.players:
+                shutil.copyfile('cache/avatar/' + name + '.png',
+                                os.path.join(out, 'avatar/', name + '.png'))
 
-        outjson = json.dumps(self.chatmsg)
-        datajs = open(out + 'data.js', 'w', encoding='utf-8-sig')
-        datajs.write('let chat=' + outjson + ';')
-        datajs.write('init(chat);')
-        datajs.close()
+            outjson = json.dumps(self.chatmsg)
+            datajs = open(out + 'data.js', 'w', encoding='utf-8-sig')
+            datajs.write('let chat=' + outjson + ';')
+            datajs.write('init(chat);')
+            datajs.close()
+
+'''
+print('加载中...')
+with open('login.txt', 'r') as ld:
+    account_details = ld.read().split(':')
+    account = xbox.client.authenticate(login=account_details[0], password=account_details[1])'''

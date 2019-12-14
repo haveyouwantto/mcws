@@ -151,8 +151,14 @@ class MidiPlayer(threading.Thread):
     def searchMidi(self, keyword):
         self.lastQuery = keyword
         results = []
+        keyword = keyword.lower().split(' ')
         for i in range(len(self.midils)):
-            if keyword in self.midils[i].lower():
+            element = self.midils[i].lower()
+            priority = 0
+            for j in keyword:
+                if j in element:
+                    priority += 1
+            if priority == len(keyword):
                 results.append((i, self.midils[i]))
         return results
 

@@ -11,6 +11,7 @@ import midiplayer
 import chat_logger
 import message_utils
 import ref_strings
+import worldedit
 
 
 def runmain(coroutine):
@@ -29,8 +30,6 @@ async def hello(ws, path):
     await log.getHost()
 
     await ws.send(message_utils.info(ref_strings.loading))
-
-    log.authenticate()
 
     # 监听聊天信息
     await ws.send(message_utils.sub)
@@ -93,6 +92,11 @@ async def hello(ws, path):
                                 await ws.send(setBlock(px + x, py + y, pz + z, "redstone_block"))
                                 time.sleep(0.001)'''
 
+                    if args[0] == ".set":
+                        if args[1] == "1":
+                            pos = worldedit.Position(0, 0, 0)
+                            await ws.send(message_utils.info('坐标1:'+str(pos)))
+
             elif msg["header"]["messagePurpose"] == "commandResponse":
                 pass
     except (KeyboardInterrupt, websockets.exceptions.ConnectionClosedOK, websockets.exceptions.ConnectionClosedError,
@@ -103,8 +107,8 @@ async def hello(ws, path):
 
 
 if __name__ == '__main__':
-    start_server = websockets.serve(hello, "0.0.0.0", 19111)
-    print('/connect 127.0.0.1:19111')
+    start_server = websockets.serve(hello, "0.0.0.0", 26362)
+    print('/connect 127.0.0.1:26362')
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
