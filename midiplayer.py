@@ -1,13 +1,11 @@
 import glob
-import math
 import threading
 import time
 import traceback
 
 import mido
 
-import drum_set
-import instruments_map
+import drum_set, instruments_map
 import mcws
 import message_utils
 import ref_strings
@@ -137,8 +135,8 @@ class MidiPlayer(threading.Thread):
                 await self.reload()
             else:
                 await self.ws.send(message_utils.error(ref_strings.unknown_command))
-        except IndexError:
-            await self.help()
+        except IndexError as e:
+            await self.ws.send(str(e))
         except ValueError:
             await self.ws.send(message_utils.error(ref_strings.midiplayer.invaild_id))
         except FileNotFoundError:

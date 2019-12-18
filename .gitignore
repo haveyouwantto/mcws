@@ -6,3 +6,4 @@ cache/*
 chat_logs/*
 log.txt
 login.txt
+.vscode/

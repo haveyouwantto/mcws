@@ -6,11 +6,14 @@ from time import sleep
 
 import requests
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 
 def getUserData(username, language='en-us'):
-    
-    auth=open("login.txt").read()
+
+    auth = open("login.txt").read()
 
     # 请求头设置
     payloadHeader = {
@@ -41,26 +44,31 @@ def getUserData(username, language='en-us'):
     HttpStatusCode = rejson['HttpStatusCode']
     if HttpStatusCode == 302:
         login(rejson)
-        return getUserData(username,language)
+        return getUserData(username, language)
 
     xboxData = rejson['PrimaryArea']['Regions'][0]['Modules'][0]['DetailViewModel']
     return xboxData
 
+
 def login(rejson):
     print('''-------------------------------
-                    XBOX 登录
+                    请登录xbox。
+            -------------------------------
     ''')
-    url=rejson["RedirectUrl"]
+    url = rejson["RedirectUrl"]
     driver = webdriver.Chrome()
     driver.get(url)
-    input('请登录xbox,完成后按enter键。')
+    
+    WebDriverWait(driver, 60, 1).until(
+        lambda driver: driver.find_element_by_id('uhfCatLogo')
+    )
 
     cookies = driver.get_cookies()
     for i in cookies:
-        if i["name"] == "RPSSecAuth" :
-            key=i["value"]
+        if i["name"] == "RPSSecAuth":
+            key = i["value"]
             print(key)
-            f=open("login.txt","w")
+            f = open("login.txt", "w")
             f.write(key)
             f.close()
 

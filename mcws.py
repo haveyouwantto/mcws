@@ -13,7 +13,6 @@ import message_utils
 import ref_strings
 import worldedit
 
-
 def runmain(coroutine):
     try:
         coroutine.send(None)
