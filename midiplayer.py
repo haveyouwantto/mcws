@@ -36,7 +36,7 @@ class MidiPlayer(threading.Thread):
         await self.ws.send(
             message_utils.cmd(
                 "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
-                    math.asin(-pan * 2) * 3.183098861837907) + " ^1.62 ^ " + str(
+                    math.asin(-pan * 2) * 2.5464790894703255) + " ^1.62 ^1 " + str(
                     volume) + " " + str(pitch)))
 
     async def play_perc(self, midimsg, pan, chanvol):
@@ -46,7 +46,7 @@ class MidiPlayer(threading.Thread):
         await self.ws.send(
             message_utils.cmd(
                 "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
-                    math.asin(-pan * 2) * 3.183098861837907) + " ^1.62 ^ " + str(
+                    math.asin(-pan * 2) * 2.5464790894703255) + " ^1.62 ^1 " + str(
                     volume) + " " + str(pitch)))
 
     def run(self):
