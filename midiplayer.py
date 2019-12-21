@@ -2,10 +2,12 @@ import glob
 import threading
 import time
 import traceback
+import math
 
 import mido
 
-import drum_set, instruments_map
+import drum_set
+import instruments_map
 import mcws
 import message_utils
 import ref_strings
@@ -26,27 +28,33 @@ class MidiPlayer(threading.Thread):
         self.searchResult = []
         self.lastQuery = ""
 
-    async def play_note(self, midimsg, inst):
+    async def play_note(self, midimsg, inst, pan, chanvol):
         origin = midimsg.note - 66
         instrument = instruments_map.inst_map[inst]
         pitch = 2 ** ((origin + instrument[1]) / 12)
-        volume = midimsg.velocity / 128
+        volume = midimsg.velocity / 128 * chanvol
         await self.ws.send(
             message_utils.cmd(
-                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^0 ^ ^ " + str(volume) + " " + str(pitch)))
+                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
+                    math.asin(-pan * 2) * 3.183098861837907) + " ^1.62 ^ " + str(
+                    volume) + " " + str(pitch)))
 
-    async def play_perc(self, midimsg):
+    async def play_perc(self, midimsg, pan, chanvol):
         instrument = drum_set.drum_set[midimsg.note]
         pitch = 2 ** (instrument[1] / 12)
         volume = midimsg.velocity / 128
         await self.ws.send(
             message_utils.cmd(
-                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^0 ^ ^ " + str(volume) + " " + str(pitch)))
+                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
+                    math.asin(-pan * 2) * 3.183098861837907) + " ^1.62 ^ " + str(
+                    volume) + " " + str(pitch)))
 
     def run(self):
         while True:
             if self.playing:
                 inst = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                pan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                channel_volume = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 self.isPlaying = True
                 try:
                     for msg in self.mid.play():
@@ -56,12 +64,18 @@ class MidiPlayer(threading.Thread):
                         if msg.type == "note_on" and msg.velocity != 0:
                             if msg.channel != 9:
                                 mcws.runmain(
-                                    self.play_note(msg, inst[msg.channel]))
+                                    self.play_note(msg, inst[msg.channel], pan[msg.channel],
+                                                   channel_volume[msg.channel]))
                             else:
-                                mcws.runmain(self.play_perc(msg))
-                        if msg.type == "program_change":
+                                mcws.runmain(self.play_perc(msg, pan[msg.channel], channel_volume[msg.channel]))
+                        elif msg.type == "program_change":
                             inst[msg.channel] = msg.program
-                            print(inst)
+                        elif msg.type == "control_change":
+                            if msg.control == 10:
+                                pan[msg.channel] = msg.value / 127 - 0.5
+                            elif msg.control == 7:
+                                channel_volume[msg.channel] = msg.value / 127
+
                 except Exception as e:
                     traceback.print_exc()
                     mcws.runmain(self.ws.send(message_utils.info(e)))

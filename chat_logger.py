@@ -17,8 +17,9 @@ class ChatLogger:
     def __init__(self, ws):
         self.ws = ws
         self.players = []
+        self.history_players=[]
         for i in glob.glob('cache/avatar/*.png'):
-            self.players.append(fileutils.getCleanName(i))
+            self.history_players.append(fileutils.getCleanName(i))
 
     async def getHost(self):
         await self.ws.send(message_utils.cmd('testfor @s'))
@@ -51,9 +52,12 @@ class ChatLogger:
             'receiver': None
         }
 
+        if sender not in self.history_players:
+            self.history_players.append(sender)
+            avatar.download_avatar(sender)
+
         if sender not in self.players:
             self.players.append(sender)
-            avatar.download_avatar(sender)
 
         if ('Receiver' in prop):
             info['receiver'] = prop['Receiver']
