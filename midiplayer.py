@@ -42,7 +42,7 @@ class MidiPlayer(threading.Thread):
     async def play_perc(self, midimsg, pan, chanvol):
         instrument = drum_set.drum_set[midimsg.note]
         pitch = 2 ** (instrument[1] / 12)
-        volume = midimsg.velocity / 128
+        volume = midimsg.velocity / 128 * chanvol
         await self.ws.send(
             message_utils.cmd(
                 "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
