@@ -27,26 +27,27 @@ class MidiPlayer(threading.Thread):
         self.isClosed = False
         self.searchResult = []
         self.lastQuery = ""
+        self.selector="@a"
 
     async def play_note(self, midimsg, inst, pan, chanvol):
         origin = midimsg.note - 66
         instrument = instruments_map.inst_map[inst]
         pitch = 2 ** ((origin + instrument[1]) / 12)
-        volume = midimsg.velocity / 128 * chanvol
+        volume = midimsg.velocity / 127 * chanvol
         await self.ws.send(
             message_utils.cmd(
-                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
-                    math.asin(-pan * 2) * 2.5464790894703255) + " ^1.62 ^1 " + str(
+                "execute "+self.selector+" ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
+                    math.asin(-pan * 2) * 3.183098861837907) + " ^ ^ " + str(
                     volume) + " " + str(pitch)))
 
     async def play_perc(self, midimsg, pan, chanvol):
         instrument = drum_set.drum_set[midimsg.note]
         pitch = 2 ** (instrument[1] / 12)
-        volume = midimsg.velocity / 128 * chanvol
+        volume = midimsg.velocity / 127 * chanvol
         await self.ws.send(
             message_utils.cmd(
-                "execute @a ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
-                    math.asin(-pan * 2) * 2.5464790894703255) + " ^1.62 ^1 " + str(
+                "execute "+self.selector+" ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
+                    math.asin(-pan * 2) * 3.183098861837907) + " ^ ^ " + str(
                     volume) + " " + str(pitch)))
 
     def run(self):

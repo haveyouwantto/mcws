@@ -53,7 +53,7 @@ async def hello(ws, path):
                     args = raw.split(" ")
 
                     if args[0] == ".info":
-                        await ws.send(message_utils.info(ref_strings.mcws.help))
+                        await ws.send(message_utils.info(ref_strings.mcws.info))
 
                     if args[0] == ".help":
                         for i in ref_strings.mcws.help:

@@ -5,8 +5,8 @@ inst_map = [
     ["note.harp", 0],
     ["note.pling", 0],
     ["note.harp", 0],
-    ["note.bit", 0],
-    ["note.bit", 0],
+    ["note.pling", 0],
+    ["note.pling", 0],
     ["note.harp", 0],
     ["note.harp", 0],
     # chromeatic percussion
@@ -19,8 +19,8 @@ inst_map = [
     ["random.orb", -33],
     ["note.bell", 0],
     # organ
-    ["note.bass", 36],
-    ["note.bass", 36], 
+    ["note.flute", -12], 
+    ["note.flute", -12],  
     ["note.flute", -12], 
     ["note.flute", -12], 
     ["note.flute", -12], 
@@ -28,7 +28,7 @@ inst_map = [
     ["note.flute", -12], 
     ["note.flute", -12],
     # guitar
-    ["note.pling", 0],
+    ["note.guitar", 12],
     ["note.guitar", 12],
     ["note.pling", 0],
     ["note.guitar", 12],
@@ -123,9 +123,9 @@ inst_map = [
     ["note.banjo", 0],
     ["note.banjo", 0],
     ["note.iron_xylophone", 0],
-    ["note.didgeridoo", 24],
-    ["note.didgeridoo", 24],
-    ["note.didgeridoo", 24],
+    ["note.flute", -12],
+    ["note.flute", -12],
+    ["note.flute", -12],
     # percussive
     ["note.bell", -12],
     ["note.harp", 0],
