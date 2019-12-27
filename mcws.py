@@ -107,7 +107,7 @@ async def hello(ws, path):
 
 if __name__ == '__main__':
     start_server = websockets.serve(hello, "0.0.0.0", 26362)
-    print('/connect 127.0.0.1:26362')
+    print('/wsserver ws://127.0.0.1:26362')
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
