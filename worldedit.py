@@ -57,9 +57,9 @@ def generateCoorSequence(pos1, pos2):
         xs = smaller(pos1.x, pos2.x)
         ys = smaller(pos1.y, pos2.y)
         zs = smaller(pos1.z, pos2.z)
-        for x in range(xs[0], xs[1], 32):
-            for y in range(ys[0], ys[1], 32):
-                for z in range(zs[0], zs[1], 32):
+        for x in range(xs[0], xs[1]+1, 32):
+            for y in range(ys[0], ys[1]+1, 32):
+                for z in range(zs[0], zs[1]+1, 32):
                     if xs[1] - x < 32:
                         x2 = xs[1]
                     else:
@@ -76,6 +76,8 @@ def generateCoorSequence(pos1, pos2):
                         (Position(x, y, z), Position(x2, y2, z2))
                     )
         return out
+
+#print(generateCoorSequence(Position(127,62,143),Position(-128,62,-112)))
 
 class WorldEdit:
 
