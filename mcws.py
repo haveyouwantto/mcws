@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import traceback
+import base64
 
 import websockets
 
@@ -12,6 +13,8 @@ import chat_logger
 import message_utils
 import ref_strings
 import worldedit
+import entitycounter
+
 
 def runmain(coroutine):
     try:
@@ -26,7 +29,7 @@ async def hello(ws, path):
     player.start()
 
     log = chat_logger.ChatLogger(ws)
-    await log.getHost()
+    host = await log.getHost()
 
     await ws.send(message_utils.info(ref_strings.loading))
 
@@ -37,6 +40,13 @@ async def hello(ws, path):
 
     await ws.send(message_utils.info(ref_strings.mcws.welcome))
 
+    pos1 = None
+    pos2 = None
+
+    # await ws.send(message_utils.cmd("enableencryption \"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEfHXre8wewVRVY/cCpVP+Rz7ZJg/jxe+ITuhiMeHsr8QdGFzQrn9IU6c3qCdQbi4sf636uIXEwBsQGmgU/JbxO8ugbqMUFswWccPhqpdeCY2CihdHVOsCD1oC9s/hkEnl\" \"7JwjF0k1G1ATc3akeZvgIw==\""))
+    # print(await ws.recv())
+    # data=await ws.recv()
+    # print(base64.b64encode(data))
     try:
         while True:
             data = await ws.recv()
@@ -52,8 +62,56 @@ async def hello(ws, path):
 
                     args = raw.split(" ")
 
+                    if msg["body"]["properties"]["Sender"] == host:
+
+                        if args[0] == ".set":
+                            if(len(args) == 1 or args[1] == ''):
+                                await ws.send(message_utils.error('语法错误'))
+                                continue
+                            if args[1] == "1":
+                                pos1 = await worldedit.getPlayerBlockPos(ws)
+                                if pos2 == None:
+                                    pos2 = pos1
+                                await ws.send(
+                                    message_utils.info(
+                                        '坐标1: {0} ({1})'.format(
+                                            str(pos1), pos1 * pos2
+                                        )
+                                    )
+                                )
+                            if args[1] == "2":
+                                pos2 = await worldedit.getPlayerBlockPos(ws)
+                                if pos1 == None:
+                                    pos1 = pos2
+                                await ws.send(
+                                    message_utils.info(
+                                        '坐标2: {0} ({1})'.format(
+                                            str(pos2), pos1 * pos2
+                                        )
+                                    )
+                                )
+
+                        if args[0] == ".fill":
+                            if(len(args) == 1 or args[1] == ''):
+                                await ws.send(message_utils.error('语法错误'))
+                                continue
+                            if pos1 == None or pos2 == None:
+                                await ws.send(message_utils.error('未设置坐标'))
+                                continue
+                            result=await worldedit.fill(ws,pos1,pos2,args[1])
+                            if result["success"]:
+                                await ws.send(message_utils.info(result["data"]))
+                            else:
+                                await ws.send(message_utils.error(result["data"]))
+
+                        if args[0] == ".entitycounter":
+                            '''
+                            c=entitycounter.EntityCounter(ws)
+                            c.start()'''
+
                     if args[0] == ".info":
                         await ws.send(message_utils.info(ref_strings.mcws.info))
+                        await ws.send(message_utils.info(ref_strings.pyversion))
 
                     if args[0] == ".help":
                         for i in ref_strings.mcws.help:
@@ -90,11 +148,6 @@ async def hello(ws, path):
                                 y = x ^ z
                                 await ws.send(setBlock(px + x, py + y, pz + z, "redstone_block"))
                                 time.sleep(0.001)'''
-
-                    if args[0] == ".set":
-                        if args[1] == "1":
-                            pos = worldedit.Position(0, 0, 0)
-                            await ws.send(message_utils.info('坐标1:'+str(pos)))
 
             elif msg["header"]["messagePurpose"] == "commandResponse":
                 pass

@@ -1,6 +1,8 @@
 import json
 import math
 
+from colorama import Back, Fore, Style
+
 import ref_strings
 
 sub = json.dumps({
@@ -16,7 +18,7 @@ sub = json.dumps({
 })
 
 
-def cmd(line):
+def cmd(line, uuid="ffff0000-0000-0000-0000-000000000000"):
     return json.dumps({
         "body": {
             "origin": {
@@ -26,7 +28,7 @@ def cmd(line):
             "version": 1
         },
         "header": {
-            "requestId": "ffff0000-0000-0000-0000-000000000000",
+            "requestId": uuid,
             "messagePurpose": "commandRequest",
             "version": 1,
             "messageType": "commandRequest"
@@ -37,14 +39,21 @@ def cmd(line):
 def getChat(msg):
     return msg["body"]["properties"]["Message"]
 
+def log(msg):
+    print(Fore.WHITE+msg)
 
 def info(msg):
+    print(Fore.MAGENTA+msg)
     return cmd("say \u00a7d" + str(msg))
+
 
 def warning(msg):
+    print(Fore.YELLOW+msg)
     return cmd("say \u00a7d" + str(msg))
 
+
 def error(msg):
+    print(Fore.RED+msg)
     return cmd("say \u00a7c" + str(msg))
 
 
@@ -84,11 +93,12 @@ def getPage(_list, page):
     return {
         'start': start,
         'entries': out,
-        'page':page,
-        'maxpage':maxpage
+        'page': page,
+        'maxpage': maxpage
     }
 
-async def printEntries(ws,entries):
+
+async def printEntries(ws, entries):
     if entries != None:
         start = entries['start']
         for i in range(10):

@@ -27,7 +27,7 @@ class MidiPlayer(threading.Thread):
         self.isClosed = False
         self.searchResult = []
         self.lastQuery = ""
-        self.selector="@a"
+        self.selector = "@a"
 
     async def play_note(self, midimsg, inst, pan, chanvol):
         origin = midimsg.note - 66
@@ -55,7 +55,8 @@ class MidiPlayer(threading.Thread):
             if self.playing:
                 inst = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 pan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                channel_volume = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                channel_volume = [1, 1, 1, 1, 1, 1,
+                                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 self.isPlaying = True
                 try:
                     for msg in self.mid.play():
@@ -68,7 +69,8 @@ class MidiPlayer(threading.Thread):
                                     self.play_note(msg, inst[msg.channel], pan[msg.channel],
                                                    channel_volume[msg.channel]))
                             else:
-                                mcws.runmain(self.play_perc(msg, pan[msg.channel], channel_volume[msg.channel]))
+                                mcws.runmain(self.play_perc(
+                                    msg, pan[msg.channel], channel_volume[msg.channel]))
                         elif msg.type == "program_change":
                             inst[msg.channel] = msg.program
                         elif msg.type == "control_change":
@@ -86,8 +88,11 @@ class MidiPlayer(threading.Thread):
             else:
                 time.sleep(0.05)
 
-    def set_midi(self, mid):
-        self.mid = mido.MidiFile(mid)
+    async def set_midi(self, mid):
+        try:
+            self.mid = mido.MidiFile(mid)
+        except Exception as e:
+            await self.ws.send(message_utils.error(e))
 
     def play(self):
         self.playing = True
@@ -102,39 +107,40 @@ class MidiPlayer(threading.Thread):
 
     async def help(self):
         for i in ref_strings.midiplayer.help:
-            await self.ws.send(message_utils.info(i + " - " + ref_strings.midiplayer.help[i]))
+            await self.ws.send(message_utils.info(i + " , " + ref_strings.midiplayer.help[i]))
 
     async def parseCmd(self, args):
 
         try:
-            if args[0] == "-help":
+            if args[0] == "--help" or args[0] == "-h" or args[0] == "-?" or args == []:
                 await self.help()
 
-            elif args[0] == "-info":
+            elif args[0] == "--info" or args[0] == "-i":
                 await self.ws.send(message_utils.info(ref_strings.midiplayer.info))
+                await self.ws.send(message_utils.info(ref_strings.midiplayer.midicount.format(len(self.midils))))
 
-            elif args[0] == "-list":
+            elif args[0] == "--list" or args[0] == "-ls":
                 page = 1
                 if len(args) != 1:
                     page = int(args[1])
                 entries = message_utils.getPage(self.midils, page)
                 await message_utils.printEntries(self.ws, entries)
 
-            elif args[0] == "-stop":
+            elif args[0] == "--stop" or args[0] == "-s":
                 await self.stop()
 
-            elif args[0] == "-play":
+            elif args[0] == "--play" or args[0] == "-p":
                 arg1 = int(args[1])
                 if arg1 < len(self.midils):
                     await self.stop()
                     await self.ws.send(
                         message_utils.info(ref_strings.midiplayer.load_song.format(self.midils[arg1])))
-                    self.set_midi(self.midils[arg1])
+                    await self.set_midi(self.midils[arg1])
                     self.play()
                 else:
                     await self.ws.send(message_utils.error(ref_strings.file_not_exists))
 
-            elif args[0] == "-search":
+            elif args[0] == "--search" or args[0] == "-se":
                 if args[1:] == []:
                     await self.ws.send(message_utils.error(ref_strings.search_error))
                     return
@@ -146,10 +152,10 @@ class MidiPlayer(threading.Thread):
                     for i in results:
                         await self.ws.send(
                             message_utils.info('[§c{0}§d] - {1}'.format(i[0], i[1])))
-            elif args[0] == "-reload":
+            elif args[0] == "--reload" or args[0] == "-re":
                 await self.reload()
             else:
-                await self.ws.send(message_utils.error(ref_strings.unknown_command))
+                await self.ws.send(message_utils.error(ref_strings.midiplayer.unknown_command))
         except IndexError as e:
             await self.ws.send(str(e))
         except ValueError:

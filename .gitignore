@@ -7,3 +7,6 @@ chat_logs/*
 log.txt
 login.txt
 .vscode/
+test.py
+note.txt
+b.recv

@@ -34,8 +34,10 @@ def getUserData(username, language='en-us'):
 
     res = requests.get(postUrl, headers=payloadHeader,
                        timeout=timeOut, allow_redirects=True)
-    print(
-        f"responseTime = {datetime.datetime.now()}, statusCode = {res.status_code}")
+
+    if res.status_code!=200:
+        print(
+            f"responseTime = {datetime.datetime.now()}, statusCode = {res.status_code}")
 
     if res.status_code > 299:
         raise ConnectionError('API changed')
@@ -46,8 +48,11 @@ def getUserData(username, language='en-us'):
         login(rejson)
         return getUserData(username, language)
 
-    xboxData = rejson['PrimaryArea']['Regions'][0]['Modules'][0]['DetailViewModel']
-    return xboxData
+    try:
+        xboxData = rejson['PrimaryArea']['Regions'][0]['Modules'][0]['DetailViewModel']
+        return xboxData
+    except:
+        print(rejson)
 
 
 def login(rejson):

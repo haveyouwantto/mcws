@@ -24,14 +24,13 @@ class ChatLogger:
     async def getHost(self):
         await self.ws.send(message_utils.cmd('testfor @s'))
         msg = await self.ws.recv()
-        print(msg)
         self.host = json.loads(msg)['body']['victim'][0]
         self.chatmsg = {
             'time': time.time(),
             'host_name': self.host,
             'messages': []
         }
-        print(self.chatmsg)
+        return self.host
 
     def log(self, parsed):
         ts = time.time()
@@ -63,7 +62,7 @@ class ChatLogger:
             info['receiver'] = prop['Receiver']
 
         self.chatmsg['messages'].append(info)
-        print('<{0}> {1}'.format(sender, message))
+        message_utils.log('<{0}> {1}'.format(sender, message))
 
     def close(self):
         if self.chatmsg['messages']!=[]:
