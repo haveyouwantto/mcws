@@ -6,8 +6,10 @@ search_error = '搜索内容不能为空'
 empty_result = '未找到任何结果'
 page_error = '页数无效'
 file_not_exists = '文件不存在'
-pyversion='Python '+sys.version
-version=''
+command_error = '语法错误'
+pyversion = 'Python '+sys.version
+version = ''
+
 
 class mcws:
     help = {
@@ -32,10 +34,16 @@ class midiplayer:
         '--reload': '-re 重新加载mid文件列表    \u00a7c-reload'
     }
     info = '\u00a76mcws midi模块 \u00a7bby HYWT'
-    midicount="当前有 {0} 首 midi 音乐"
+    midicount = "当前有 {0} 首 midi 音乐"
     stopping = "正在停止"
     stopped = '已停止'
     load_song = "正在加载 {0}..."
     invaild_id = 'ID 无效'
-    reload = 'mid文件列表已重新加载。'
+    reload = 'mid文件列表已重新加载'
     unknown_command = '未知命令。使用 .midi -h 查看可用命令列表。'
+
+class worldedit:
+    no_coordinate='未设置坐标'
+    coor_1_msg='第一坐标设置为 ({0}) ({1})'
+    coor_2_msg='第二坐标设置为 ({0}) ({1})'
+    fill_message='已处理{0}个方块'

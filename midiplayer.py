@@ -1,8 +1,8 @@
 import glob
+import math
 import threading
 import time
 import traceback
-import math
 
 import mido
 

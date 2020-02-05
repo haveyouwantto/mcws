@@ -1,16 +1,17 @@
 import glob
 import json
 import os
-import time
 import shutil
+import time
+
+import avatardownload as avatar
+import fileutils
+import mcws
+import message_utils
+import ref_strings
 
 #import xbox
 
-import avatardownload as avatar
-import mcws
-import fileutils
-import message_utils
-import ref_strings
 
 
 class ChatLogger:

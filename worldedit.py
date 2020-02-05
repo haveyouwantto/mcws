@@ -1,5 +1,8 @@
-import message_utils
 import json
+import time
+
+import message_utils
+import ref_strings
 
 
 class Position:
@@ -22,89 +25,134 @@ class Position:
         )**1/2
 
 
-async def fill(ws, pos1, pos2, blockname, blockdata=0):
-    await ws.send(message_utils.cmd("fill {0} {1} {2} {3}".format(pos1, pos2, blockname, blockdata)))
-    msg = json.loads(await ws.recv())
-    if msg["body"]["statusCode"] == -2147483648:
-        return {
-            "success": False,
-            "data": msg["body"]["statusMessage"]
-        }
+def smaller(a, b):
+    if a < b:
+        return [a, b]
     else:
-        return {
-            "success": True,
-            "data": "已填充{0}个{1}".format(msg["body"]["fillCount"], msg["body"]["blockName"])
-        }
-
-
-def sort(a, b):
-    l = [a, b]
-    return sorted(l)
-
-
-async def getPlayerPos(ws):
-    await ws.send(message_utils.cmd('querytarget @s'))
-    data = await ws.recv()
-    msg = json.loads(data)
-    detail = json.loads(msg["body"]["details"])[0]
-    x = detail["position"]["x"]
-    y = detail["position"]["y"]
-    z = detail["position"]["z"]
-    return Position(x, y, z)
-
-
-async def getPlayerBlockPos(ws):
-    await ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
-    data = await ws.recv()
-    msg = json.loads(data)
-    print(msg)
-    x = msg["body"]["position"]["x"]
-    y = msg["body"]["position"]["y"]
-    z = msg["body"]["position"]["z"]
-    return Position(x, y, z)
+        return [b, a]
 
 
 def intPos(pos):
     return Position(int(pos.x), int(pos.y), int(pos.z))
 
 
-def parseCmd(ws, args):
-    if args[0] == ".set":
-        if(len(args) == 1 or args[1] == ''):
-            await ws.send(message_utils.error('语法错误'))
-            return
-        if args[1] == "1":
-            pos1 = await worldedit.getPlayerBlockPos(ws)
-            if pos2 == None:
-                pos2 = pos1
-            await ws.send(
-                message_utils.info(
-                    '坐标1: {0} ({1})'.format(
-                        str(pos1), pos1 * pos2
-                    )
-                )
-            )
-        if args[1] == "2":
-            pos2 = await worldedit.getPlayerBlockPos(ws)
-            if pos1 == None:
-                pos1 = pos2
-            await ws.send(
-                message_utils.info(
-                    '坐标2: {0} ({1})'.format(
-                        str(pos2), pos1 * pos2
-                    )
-                )
-            )
+def getSize(pos1, pos2):
+    return (
+        abs(pos1.x-pos2.x),
+        abs(pos1.y-pos2.y),
+        abs(pos1.z-pos2.z)
+    )
 
-    if args[0] == ".fill":
-        if(len(args) == 1 or args[1] == ''):
-            await ws.send(message_utils.error('语法错误'))
-            return
-        if pos1 == None or pos2 == None:
-            await ws.send(message_utils.error('未设置坐标'))
-            return
-        result=await worldedit.fill(ws,pos1,pos2,args[1])
-        if result["success"]:
-            await ws.send(message_utils.info(result["data"]))
-        else:
-            await ws.send(message_utils.error(result["data"]))
+
+def generateCoorSequence(pos1, pos2):
+    dimension = getSize(pos1, pos2)
+    if pos1 * pos2 <= 32768:
+        return {
+            "size": pos1 * pos2, "dimension": dimension, "sequence": [(pos1, pos2)]
+        }
+    else:
+        out = {
+            "size": pos1 * pos2, "dimension": dimension, "sequence": []
+        }
+        xs = smaller(pos1.x, pos2.x)
+        ys = smaller(pos1.y, pos2.y)
+        zs = smaller(pos1.z, pos2.z)
+        for x in range(xs[0], xs[1], 32):
+            for y in range(ys[0], ys[1], 32):
+                for z in range(zs[0], zs[1], 32):
+                    if xs[1] - x < 32:
+                        x2 = xs[1]
+                    else:
+                        x2 = x+31
+                    if ys[1] - y < 32:
+                        y2 = ys[1]
+                    else:
+                        y2 = y+31
+                    if zs[1] - z < 32:
+                        z2 = zs[1]
+                    else:
+                        z2 = z+31
+                    out['sequence'].append(
+                        (Position(x, y, z), Position(x2, y2, z2))
+                    )
+        return out
+
+class WorldEdit:
+
+    def __init__(self, ws):
+        self.ws = ws
+        self.pos1 = None
+        self.pos2 = None
+
+    async def parseCmd(self, args):
+        if args[0] == ".set":
+            if(len(args) == 1 or args[1] == ''):
+                await self.ws.send(message_utils.error(ref_strings.command_error))
+                return
+            if args[1] == "1":
+                self.pos1 = await self.getPlayerBlockPos()
+                if self.pos2 == None:
+                    self.pos2 = self.pos1
+                await self.ws.send(
+                    message_utils.info(
+                        ref_strings.worldedit.coor_1_msg.format(
+                            str(self.pos1), self.pos1 * self.pos2
+                        )
+                    )
+                )
+            if args[1] == "2":
+                self.pos2 = await self.getPlayerBlockPos()
+                if self.pos1 == None:
+                    self.pos1 = self.pos2
+                await self.ws.send(
+                    message_utils.info(
+                        ref_strings.worldedit.coor_2_msg.format(
+                            str(self.pos2), self.pos1 * self.pos2
+                        )
+                    )
+                )
+
+        if args[0] == ".fill":
+            if(len(args) == 1 or args[1] == ''):
+                await self.ws.send(message_utils.error(ref_strings.command_error))
+                return
+            if self.pos1 == None or self.pos2 == None:
+                await self.ws.send(message_utils.error(ref_strings.worldedit.no_coordinate))
+                return
+            if len(args) == 2:
+                result = await self.fill(args[1])
+            else:
+                result = await self.fill(args[1], args[2])
+            if result["success"]:
+                await self.ws.send(message_utils.info(result["data"]))
+            else:
+                await self.ws.send(message_utils.error(result["data"]))
+
+    async def fill(self, blockname, blockdata=0):
+        sequence = generateCoorSequence(self.pos1, self.pos2)
+        for i in sequence['sequence']:
+            await self.ws.send(message_utils.cmd("fill {0} {1} {2} {3}".format(i[0], i[1], blockname, blockdata)))
+            time.sleep(0.01)
+        return {
+            "success": True,
+            "data": ref_strings.worldedit.fill_message.format(sequence['size'])
+        }
+
+    async def getPlayerPos(self):
+        await self.ws.send(message_utils.cmd('querytarget @s'))
+        data = await self.ws.recv()
+        msg = json.loads(data)
+        detail = json.loads(msg["body"]["details"])[0]
+        x = detail["position"]["x"]
+        y = detail["position"]["y"]
+        z = detail["position"]["z"]
+        return Position(x, y, z)
+
+    async def getPlayerBlockPos(self):
+        await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
+        data = await self.ws.recv()
+        msg = json.loads(data)
+        x = msg["body"]["position"]["x"]
+        y = msg["body"]["position"]["y"]
+        z = msg["body"]["position"]["z"]
+        return Position(x, y, z)

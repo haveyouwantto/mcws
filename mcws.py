@@ -1,19 +1,19 @@
 import asyncio
+import base64
 import glob
 import json
 import os
 import sys
 import traceback
-import base64
 
 import websockets
 
-import midiplayer
 import chat_logger
+import entitycounter
 import message_utils
+import midiplayer
 import ref_strings
 import worldedit
-import entitycounter
 
 
 def runmain(coroutine):
@@ -31,6 +31,8 @@ async def hello(ws, path):
     log = chat_logger.ChatLogger(ws)
     host = await log.getHost()
 
+    we=worldedit.WorldEdit(ws)
+
     await ws.send(message_utils.info(ref_strings.loading))
 
     # 监听聊天信息
@@ -39,9 +41,6 @@ async def hello(ws, path):
     sender = "外部"
 
     await ws.send(message_utils.info(ref_strings.mcws.welcome))
-
-    pos1 = None
-    pos2 = None
 
     # await ws.send(message_utils.cmd("enableencryption \"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEfHXre8wewVRVY/cCpVP+Rz7ZJg/jxe+ITuhiMeHsr8QdGFzQrn9IU6c3qCdQbi4sf636uIXEwBsQGmgU/JbxO8ugbqMUFswWccPhqpdeCY2CihdHVOsCD1oC9s/hkEnl\" \"7JwjF0k1G1ATc3akeZvgIw==\""))
     # print(await ws.recv())
@@ -64,7 +63,7 @@ async def hello(ws, path):
 
                     if msg["body"]["properties"]["Sender"] == host:
 
-                        worldedit.parseCmd(ws, args)
+                        await we.parseCmd(args)
 
                         if args[0] == ".entitycounter":
                             '''
