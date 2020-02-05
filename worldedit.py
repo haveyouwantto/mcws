@@ -66,3 +66,45 @@ async def getPlayerBlockPos(ws):
 
 def intPos(pos):
     return Position(int(pos.x), int(pos.y), int(pos.z))
+
+
+def parseCmd(ws, args):
+    if args[0] == ".set":
+        if(len(args) == 1 or args[1] == ''):
+            await ws.send(message_utils.error('语法错误'))
+            return
+        if args[1] == "1":
+            pos1 = await worldedit.getPlayerBlockPos(ws)
+            if pos2 == None:
+                pos2 = pos1
+            await ws.send(
+                message_utils.info(
+                    '坐标1: {0} ({1})'.format(
+                        str(pos1), pos1 * pos2
+                    )
+                )
+            )
+        if args[1] == "2":
+            pos2 = await worldedit.getPlayerBlockPos(ws)
+            if pos1 == None:
+                pos1 = pos2
+            await ws.send(
+                message_utils.info(
+                    '坐标2: {0} ({1})'.format(
+                        str(pos2), pos1 * pos2
+                    )
+                )
+            )
+
+    if args[0] == ".fill":
+        if(len(args) == 1 or args[1] == ''):
+            await ws.send(message_utils.error('语法错误'))
+            return
+        if pos1 == None or pos2 == None:
+            await ws.send(message_utils.error('未设置坐标'))
+            return
+        result=await worldedit.fill(ws,pos1,pos2,args[1])
+        if result["success"]:
+            await ws.send(message_utils.info(result["data"]))
+        else:
+            await ws.send(message_utils.error(result["data"]))
