@@ -1,37 +1,48 @@
 import asyncio
-import base64
 import glob
 import json
 import os
 import sys
 import traceback
+import re
 
 import websockets
 
-import chat_logger
-import entitycounter
 import message_utils
-import midiplayer
 import ref_strings
+
+import chat_logger
 import worldedit
 
+import_midiplayer = True
+import_pixel = True
+try:
+    import midiplayer
+except ModuleNotFoundError:
+    import_midiplayer = False
+    print(ref_strings.import_error.midiplayer)
+try:
+    import pixel
+except ModuleNotFoundError:
+    import_pixel = False
+    print(ref_strings.import_error.pixel)
 
-def runmain(coroutine):
-    try:
-        coroutine.send(None)
-    except StopIteration as e:
-        return e.value
+scoreRegex = r'((- )([\s\S]+?)(: )([-\d]+?)( \()([\s\S][^)]*?)(\)+?))'
 
 
 async def hello(ws, path):
     # 加载各模块
-    player = midiplayer.MidiPlayer(ws)
-    player.start()
+    if import_midiplayer:
+        player = midiplayer.MidiPlayer(ws)
+        player.start()
 
     log = chat_logger.ChatLogger(ws)
     host = await log.getHost()
 
-    we=worldedit.WorldEdit(ws)
+    we = worldedit.WorldEdit(ws)
+
+    if import_pixel:
+        pixlegen = pixel.PixelGenerator(ws, we)
 
     await ws.send(message_utils.info(ref_strings.loading))
 
@@ -70,6 +81,21 @@ async def hello(ws, path):
                             c=entitycounter.EntityCounter(ws)
                             c.start()'''
 
+                        if args[0] == ".getscore":
+                            await ws.send(message_utils.cmd("scoreboard players list @s"))
+                            msg2 = json.loads(await ws.recv())
+                            match = re.findall(scoreRegex, msg2.get("body").get("statusMessage"))
+                            out = {}
+                            for i in match:
+                                out[i[2]] = i[4]
+                            print(out)
+
+                        if args[0] == ".pixelart" and import_pixel:
+                            try:
+                                await pixlegen.parseCmd(args[1:])
+                            except FileNotFoundError:
+                                await ws.send(message_utils.error(ref_strings.file_not_exists))
+
                     if args[0] == ".info":
                         await ws.send(message_utils.info(ref_strings.mcws.info))
                         await ws.send(message_utils.info(ref_strings.pyversion))
@@ -91,7 +117,7 @@ async def hello(ws, path):
                             else:
                                 await ws.send(message_utils.error(ref_strings.file_not_exists))
 
-                    if args[0] == ".midi":
+                    if args[0] == ".midi" and import_midiplayer:
                         try:
                             await player.parseCmd(args[1:])
 
@@ -121,7 +147,7 @@ async def hello(ws, path):
 
 if __name__ == '__main__':
     start_server = websockets.serve(hello, "0.0.0.0", 26362)
-    print('/wsserver ws://127.0.0.1:26362')
+    print('/connect 127.0.0.1:26362')
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()

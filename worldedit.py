@@ -19,10 +19,10 @@ class Position:
 
     def getSpeed(self, other):
         return (
-            abs(self.x-other.x)**2 +
-            abs(self.y-other.y)**2 +
-            abs(self.z-other.z)**2
-        )**1/2
+                       abs(self.x - other.x) ** 2 +
+                       abs(self.y - other.y) ** 2 +
+                       abs(self.z - other.z) ** 2
+               ) ** 1 / 2
 
 
 def smaller(a, b):
@@ -38,9 +38,9 @@ def intPos(pos):
 
 def getSize(pos1, pos2):
     return (
-        abs(pos1.x-pos2.x),
-        abs(pos1.y-pos2.y),
-        abs(pos1.z-pos2.z)
+        abs(pos1.x - pos2.x),
+        abs(pos1.y - pos2.y),
+        abs(pos1.z - pos2.z)
     )
 
 
@@ -57,27 +57,34 @@ def generateCoorSequence(pos1, pos2):
         xs = smaller(pos1.x, pos2.x)
         ys = smaller(pos1.y, pos2.y)
         zs = smaller(pos1.z, pos2.z)
-        for x in range(xs[0], xs[1]+1, 32):
-            for y in range(ys[0], ys[1]+1, 32):
-                for z in range(zs[0], zs[1]+1, 32):
+        for x in range(xs[0], xs[1] + 1, 32):
+            for y in range(ys[0], ys[1] + 1, 32):
+                for z in range(zs[0], zs[1] + 1, 32):
                     if xs[1] - x < 32:
                         x2 = xs[1]
                     else:
-                        x2 = x+31
+                        x2 = x + 31
                     if ys[1] - y < 32:
                         y2 = ys[1]
                     else:
-                        y2 = y+31
+                        y2 = y + 31
                     if zs[1] - z < 32:
                         z2 = zs[1]
                     else:
-                        z2 = z+31
+                        z2 = z + 31
                     out['sequence'].append(
                         (Position(x, y, z), Position(x2, y2, z2))
                     )
         return out
 
-#print(generateCoorSequence(Position(127,62,143),Position(-128,62,-112)))
+
+async def setblock(ws, pos, blockname, blockdata=0):
+    cmd = 'setblock {0} {1} {2}'.format(pos, blockname, blockdata)
+    await ws.send(message_utils.cmd(cmd))
+
+
+# print(generateCoorSequence(Position(127,62,143),Position(-128,62,-112)))
+
 
 class WorldEdit:
 
@@ -88,7 +95,7 @@ class WorldEdit:
 
     async def parseCmd(self, args):
         if args[0] == ".set":
-            if(len(args) == 1 or args[1] == ''):
+            if (len(args) == 1 or args[1] == ''):
                 await self.ws.send(message_utils.error(ref_strings.command_error))
                 return
             if args[1] == "1":
@@ -115,7 +122,7 @@ class WorldEdit:
                 )
 
         if args[0] == ".fill":
-            if(len(args) == 1 or args[1] == ''):
+            if (len(args) == 1 or args[1] == ''):
                 await self.ws.send(message_utils.error(ref_strings.command_error))
                 return
             if self.pos1 == None or self.pos2 == None:

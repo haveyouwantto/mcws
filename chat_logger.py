@@ -4,28 +4,32 @@ import os
 import shutil
 import time
 
-import avatardownload as avatar
 import fileutils
-import mcws
 import message_utils
 import ref_strings
 
-#import xbox
+import_avatar = True
+try:
+    import avatardownload as avatar
+except ImportError:
+    import_avatar = False
+    print(ref_strings.import_error.avatardownload)
 
 
+# import xbox
 
 class ChatLogger:
     def __init__(self, ws):
         self.ws = ws
         self.players = []
-        self.history_players=[]
+        self.history_players = []
         for i in glob.glob('cache/avatar/*.png'):
             self.history_players.append(fileutils.getCleanName(i))
 
     async def getHost(self):
-        await self.ws.send(message_utils.cmd('testfor @s'))
+        await self.ws.send(message_utils.cmd('getlocalplayername'))
         msg = await self.ws.recv()
-        self.host = json.loads(msg)['body']['victim'][0]
+        self.host = json.loads(msg)['body']['localplayername']
         self.chatmsg = {
             'time': time.time(),
             'host_name': self.host,
@@ -54,7 +58,8 @@ class ChatLogger:
 
         if sender not in self.history_players:
             self.history_players.append(sender)
-            avatar.download_avatar(sender)
+            if import_avatar:
+                avatar.download_avatar(sender)
 
         if sender not in self.players:
             self.players.append(sender)
@@ -66,7 +71,7 @@ class ChatLogger:
         message_utils.log('<{0}> {1}'.format(sender, message))
 
     def close(self):
-        if self.chatmsg['messages']!=[]:
+        if self.chatmsg['messages'] != []:
             localTime = time.localtime(float(self.chatmsg['time']))
             date = time.strftime('%Y-%m-%d_%H-%M-%S', localTime)
 
@@ -88,6 +93,7 @@ class ChatLogger:
             datajs.write('let chat=' + outjson + ';')
             datajs.write('init(chat);')
             datajs.close()
+
 
 '''
 print('加载中...')

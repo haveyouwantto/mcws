@@ -1,7 +1,8 @@
 import json
 import math
+import os
 
-from colorama import Back, Fore, Style
+from colorama import Fore
 
 import ref_strings
 
@@ -103,8 +104,28 @@ async def printEntries(ws, entries):
         start = entries['start']
         for i in range(10):
             await ws.send(
-                info('[§c{0}§d] - {1}'.format(i + start, entries['entries'][i])))
+                info(ref_strings.list_format.format(i + start, entries['entries'][i])))
         await ws.send(
-            info('第 {0} 页，共 {1} 页'.format(entries['page'], entries['maxpage'])))
+            info(ref_strings.pagenum_format.format(entries['page'], entries['maxpage'])))
     else:
-        await ws.send(info(ref_strings.page_error))
+        await ws.send(error(ref_strings.page_error))
+
+
+def runmain(coroutine):
+    try:
+        coroutine.send(None)
+    except StopIteration as e:
+        return e.value
+
+suffix = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi']
+
+def toSI(n):
+    k = 1024
+    for i in suffix:
+        if n < k:
+            return "{0:.2f} {1}".format(n, i)
+        n /= k
+
+def filesize(filename):
+    size=os.path.getsize(filename)
+    return toSI(size)+'B'

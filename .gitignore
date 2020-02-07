@@ -1,5 +1,6 @@
 midis/*
 functions/*
+images/*
 .idea/
 __pycache__/
 cache/*
@@ -10,3 +11,4 @@ login.txt
 test.py
 note.txt
 b.recv
+sim.js

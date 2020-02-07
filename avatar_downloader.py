@@ -1,4 +1,4 @@
-# unused
+# deprecated
 
 import requests
 import xbox

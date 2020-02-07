@@ -1,0 +1,8 @@
+agent <command>
+geteduclientinfo
+getlocalplayername
+closechat
+querytarget <selector>
+listd
+enableencryption <publicKey> <salt>
+closewobsocket

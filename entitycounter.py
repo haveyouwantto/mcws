@@ -4,7 +4,6 @@ import time
 
 import matplotlib.pyplot as plt
 
-import mcws
 import message_utils
 
 
@@ -23,22 +22,22 @@ class EntityCounter(threading.Thread):
     def run(self):
         while True:
             self.update()
-            
+
     async def update(self):
         await self.ws.send(message_utils.cmd('testfor @e'))
         data = json.loads(await self.ws.recv())
         if not 'victim' in data['body']:
             self.time.append(
-            time.time()-self.start_time)
+                time.time() - self.start_time)
             self.count.append(0)
             plt.plot(self.time, self.count, 'r')
             plt.pause(1)
             return
         self.time.append(
-            time.time()-self.start_time)
+            time.time() - self.start_time)
         self.count.append(len(data['body']['victim']))
         plt.plot(self.time, self.count, 'r')
-        if len(self.time>60):
+        if len(self.time) > 60:
             self.time.pop(0)
             self.count.pop(0)
         plt.pause(1)

@@ -8,9 +8,9 @@ import mido
 
 import drum_set
 import instruments_map
-import mcws
 import message_utils
 import ref_strings
+import fileutils
 
 
 class MidiPlayer(threading.Thread):
@@ -23,7 +23,7 @@ class MidiPlayer(threading.Thread):
         self.setName('Midi Player Thread')
         self.setDaemon(True)
         self.isPlaying = False
-        self.midils = glob.glob("midis/**/*.mid", recursive=True)
+        self.listFile()
         self.isClosed = False
         self.searchResult = []
         self.lastQuery = ""
@@ -36,7 +36,7 @@ class MidiPlayer(threading.Thread):
         volume = midimsg.velocity / 127 * chanvol
         await self.ws.send(
             message_utils.cmd(
-                "execute "+self.selector+" ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
+                "execute " + self.selector + " ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
                     math.asin(pan * 2) * -2.5464790894703255) + " ^ ^ " + str(
                     volume) + " " + str(pitch)))
 
@@ -46,7 +46,7 @@ class MidiPlayer(threading.Thread):
         volume = midimsg.velocity / 127 * chanvol
         await self.ws.send(
             message_utils.cmd(
-                "execute "+self.selector+" ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
+                "execute " + self.selector + " ~ ~ ~ playsound " + instrument[0] + " @s ^" + str(
                     math.asin(pan * 2) * -2.5464790894703255) + " ^ ^ " + str(
                     volume) + " " + str(pitch)))
 
@@ -65,11 +65,11 @@ class MidiPlayer(threading.Thread):
                             break
                         if msg.type == "note_on" and msg.velocity != 0:
                             if msg.channel != 9:
-                                mcws.runmain(
+                                message_utils.runmain(
                                     self.play_note(msg, inst[msg.channel], pan[msg.channel],
                                                    channel_volume[msg.channel]))
                             else:
-                                mcws.runmain(self.play_perc(
+                                message_utils.runmain(self.play_perc(
                                     msg, pan[msg.channel], channel_volume[msg.channel]))
                         elif msg.type == "program_change":
                             inst[msg.channel] = msg.program
@@ -81,7 +81,7 @@ class MidiPlayer(threading.Thread):
 
                 except Exception as e:
                     traceback.print_exc()
-                    mcws.runmain(self.ws.send(message_utils.info(e)))
+                    message_utils.runmain(self.ws.send(message_utils.info(e)))
                     self.mid = None
                     self.isPlaying = False
                     self.playing = False
@@ -145,13 +145,13 @@ class MidiPlayer(threading.Thread):
                     await self.ws.send(message_utils.error(ref_strings.search_error))
                     return
                 keyword = " ".join(args[1:]).lower()
-                results = self.searchMidi(keyword)
+                results = self.search(keyword)
                 if len(results) == 0:
                     await self.ws.send(message_utils.error(ref_strings.empty_result))
                 else:
                     for i in results:
                         await self.ws.send(
-                            message_utils.info('[§c{0}§d] - {1}'.format(i[0], i[1])))
+                            message_utils.info(ref_strings.list_format.format(i[0], i[1])))
             elif args[0] == "--reload" or args[0] == "-re":
                 await self.reload()
             else:
@@ -162,12 +162,12 @@ class MidiPlayer(threading.Thread):
             await self.ws.send(message_utils.error(ref_strings.midiplayer.invaild_id))
         except FileNotFoundError:
             await self.ws.send(message_utils.error(ref_strings.file_not_exists))
-            await self.reload()
+            await self.listFile()
 
     def close(self):
         self.isClosed = True
 
-    def searchMidi(self, keyword):
+    def search(self, keyword):
         self.lastQuery = keyword
         results = []
         keyword = keyword.lower().split(' ')
@@ -182,6 +182,8 @@ class MidiPlayer(threading.Thread):
         return results
 
     async def reload(self):
-
-        self.midils = glob.glob("midis/**/*.mid", recursive=True)
+        self.listFile()
         await self.ws.send(message_utils.info(ref_strings.midiplayer.reload))
+
+    def listFile(self):
+        self.midils = fileutils.listFile("midis/", ("mid", "midi"))

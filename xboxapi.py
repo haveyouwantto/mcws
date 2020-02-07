@@ -5,14 +5,16 @@ import json
 from time import sleep
 
 import requests
+
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+import ref_strings
+
 
 def getUserData(username, language='en-us'):
-
     auth = open("login.txt").read()
 
     # 请求头设置
@@ -25,17 +27,17 @@ def getUserData(username, language='en-us'):
         "Accept": "application/json, text/plain, */*",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
         "__RequestVerificationToken": "bd3bCXMIhO3VLHDRc7lP3THkc1D-lZW__aRIKwFOBAOGR_hTdeNHuXKbtBt-SDMmUpma6WZM2xWWBrmeQFZD_hOkt-GUnQqlf4YkaNsTh-dB31D30",
-        "Cookie": "RPSSecAuth="+auth+"; __RequestVerificationToken=GRc-HbSOI8Hz8XyfQe3aLFeP2K9rWFe5rRf2ctLrAaRIRrY2oLpTZ25S1Z6LX2vimOjFSzfjnG9c5N0kfKXiDPVKlxY1;"
+        "Cookie": "RPSSecAuth=" + auth + "; __RequestVerificationToken=GRc-HbSOI8Hz8XyfQe3aLFeP2K9rWFe5rRf2ctLrAaRIRrY2oLpTZ25S1Z6LX2vimOjFSzfjnG9c5N0kfKXiDPVKlxY1;"
     }
 
-    postUrl = 'https://account.xbox.com/'+language + \
-        '/profile?gamertag='+username.replace(" ", "%20")
+    postUrl = 'https://account.xbox.com/' + language + \
+              '/profile?gamertag=' + username.replace(" ", "%20")
     timeOut = 25
 
     res = requests.get(postUrl, headers=payloadHeader,
                        timeout=timeOut, allow_redirects=True)
 
-    if res.status_code!=200:
+    if res.status_code != 200:
         print(
             f"responseTime = {datetime.datetime.now()}, statusCode = {res.status_code}")
 
@@ -56,14 +58,11 @@ def getUserData(username, language='en-us'):
 
 
 def login(rejson):
-    print('''-------------------------------
-                    请登录xbox。
-            -------------------------------
-    ''')
+    print(ref_strings.xboxapi.login)
     url = rejson["RedirectUrl"]
     driver = webdriver.Chrome()
     driver.get(url)
-    
+
     WebDriverWait(driver, 60, 1).until(
         lambda driver: driver.find_element_by_id('uhfCatLogo')
     )
