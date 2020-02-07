@@ -1,4 +1,3 @@
-import glob
 import math
 import threading
 import time
@@ -10,24 +9,25 @@ import drum_set
 import instruments_map
 import message_utils
 import ref_strings
-import fileutils
+from mcws_module import Command, FileIOModule
 
 
-class MidiPlayer(threading.Thread):
+class MidiPlayer(threading.Thread, FileIOModule):
 
     def __init__(self, ws):
         threading.Thread.__init__(self)
-        self.ws = ws
+        FileIOModule.__init__(self, ws, 'midis/', ('.mid', '.midi'))
         self.playing = False
         self.mid = None
         self.setName('Midi Player Thread')
         self.setDaemon(True)
         self.isPlaying = False
-        self.listFile()
         self.isClosed = False
         self.searchResult = []
         self.lastQuery = ""
         self.selector = "@a"
+        self.add_command(Command('--stop', ('-st',)), self.stop)
+        self.add_command(Command('--play', ('-p',)), self.open_file)
 
     async def play_note(self, midimsg, inst, pan, chanvol):
         origin = midimsg.note - 66
@@ -94,6 +94,13 @@ class MidiPlayer(threading.Thread):
         except Exception as e:
             await self.ws.send(message_utils.error(e))
 
+    async def open(self, filename):
+        await self.stop()
+        await self.ws.send(
+            message_utils.info(ref_strings.midiplayer.load_song.format(filename)))
+        await self.set_midi(filename)
+        self.play()
+
     def play(self):
         self.playing = True
 
@@ -105,85 +112,13 @@ class MidiPlayer(threading.Thread):
         await self.ws.send(message_utils.info(ref_strings.midiplayer.stopped))
         return
 
-    async def help(self):
+    async def help(self,args):
         for i in ref_strings.midiplayer.help:
             await self.ws.send(message_utils.info(i + " , " + ref_strings.midiplayer.help[i]))
 
-    async def parseCmd(self, args):
-
-        try:
-            if args[0] == "--help" or args[0] == "-h" or args[0] == "-?" or args == []:
-                await self.help()
-
-            elif args[0] == "--info" or args[0] == "-i":
-                await self.ws.send(message_utils.info(ref_strings.midiplayer.info))
-                await self.ws.send(message_utils.info(ref_strings.midiplayer.midicount.format(len(self.midils))))
-
-            elif args[0] == "--list" or args[0] == "-ls":
-                page = 1
-                if len(args) != 1:
-                    page = int(args[1])
-                entries = message_utils.getPage(self.midils, page)
-                await message_utils.printEntries(self.ws, entries)
-
-            elif args[0] == "--stop" or args[0] == "-s":
-                await self.stop()
-
-            elif args[0] == "--play" or args[0] == "-p":
-                arg1 = int(args[1])
-                if arg1 < len(self.midils):
-                    await self.stop()
-                    await self.ws.send(
-                        message_utils.info(ref_strings.midiplayer.load_song.format(self.midils[arg1])))
-                    await self.set_midi(self.midils[arg1])
-                    self.play()
-                else:
-                    await self.ws.send(message_utils.error(ref_strings.file_not_exists))
-
-            elif args[0] == "--search" or args[0] == "-se":
-                if args[1:] == []:
-                    await self.ws.send(message_utils.error(ref_strings.search_error))
-                    return
-                keyword = " ".join(args[1:]).lower()
-                results = self.search(keyword)
-                if len(results) == 0:
-                    await self.ws.send(message_utils.error(ref_strings.empty_result))
-                else:
-                    for i in results:
-                        await self.ws.send(
-                            message_utils.info(ref_strings.list_format.format(i[0], i[1])))
-            elif args[0] == "--reload" or args[0] == "-re":
-                await self.reload()
-            else:
-                await self.ws.send(message_utils.error(ref_strings.midiplayer.unknown_command))
-        except IndexError as e:
-            await self.ws.send(str(e))
-        except ValueError:
-            await self.ws.send(message_utils.error(ref_strings.midiplayer.invaild_id))
-        except FileNotFoundError:
-            await self.ws.send(message_utils.error(ref_strings.file_not_exists))
-            await self.listFile()
+    async def info(self, args):
+        await self.ws.send(message_utils.info(ref_strings.midiplayer.info))
+        await self.ws.send(message_utils.info(ref_strings.midiplayer.midicount.format(len(self.file_list))))
 
     def close(self):
         self.isClosed = True
-
-    def search(self, keyword):
-        self.lastQuery = keyword
-        results = []
-        keyword = keyword.lower().split(' ')
-        for i in range(len(self.midils)):
-            element = self.midils[i].lower()
-            priority = 0
-            for j in keyword:
-                if j in element:
-                    priority += 1
-            if priority == len(keyword):
-                results.append((i, self.midils[i]))
-        return results
-
-    async def reload(self):
-        self.listFile()
-        await self.ws.send(message_utils.info(ref_strings.midiplayer.reload))
-
-    def listFile(self):
-        self.midils = fileutils.listFile("midis/", ("mid", "midi"))

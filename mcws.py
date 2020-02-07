@@ -13,6 +13,7 @@ import ref_strings
 
 import chat_logger
 import worldedit
+import mcws_module
 
 import_midiplayer = True
 import_pixel = True
@@ -53,6 +54,8 @@ async def hello(ws, path):
 
     await ws.send(message_utils.info(ref_strings.mcws.welcome))
 
+    mod = mcws_module.FileIOModule(ws, 'midis/', ('.mid', '.midi'))
+
     # await ws.send(message_utils.cmd("enableencryption \"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEfHXre8wewVRVY/cCpVP+Rz7ZJg/jxe+ITuhiMeHsr8QdGFzQrn9IU6c3qCdQbi4sf636uIXEwBsQGmgU/JbxO8ugbqMUFswWccPhqpdeCY2CihdHVOsCD1oC9s/hkEnl\" \"7JwjF0k1G1ATc3akeZvgIw==\""))
     # print(await ws.recv())
     # data=await ws.recv()
@@ -92,9 +95,12 @@ async def hello(ws, path):
 
                         if args[0] == ".pixelart" and import_pixel:
                             try:
-                                await pixlegen.parseCmd(args[1:])
+                                await pixlegen.parse_command(args[1:])
                             except FileNotFoundError:
                                 await ws.send(message_utils.error(ref_strings.file_not_exists))
+
+                        if args[0]==".test":
+                            await mod.parse_command('--search touhou')
 
                     if args[0] == ".info":
                         await ws.send(message_utils.info(ref_strings.mcws.info))
@@ -119,7 +125,7 @@ async def hello(ws, path):
 
                     if args[0] == ".midi" and import_midiplayer:
                         try:
-                            await player.parseCmd(args[1:])
+                            await player.parse_command(args[1:])
 
                         except Exception as e:
                             traceback.print_exc()

@@ -9,10 +9,15 @@ file_not_exists = '文件不存在'
 command_error = '语法错误'
 pyversion = 'Python ' + sys.version
 version = ''
+unknown_command = '未知命令。'
+invaild_id = 'ID 无效'
 
 list_format = '[§c{0}§d] - {1}'
 pagenum_format = '第 {0} 页，共 {1} 页'
 
+
+class module:
+    reload = 'm文件列表已重新加载'
 
 class mcws:
     help = {
@@ -31,9 +36,9 @@ class midiplayer:
         '--info': '-i 显示信息    \u00a7c-info',
         '--help': '-h -? 提供帮助/命令列表    \u00a7c-help',
         '--play': '-p 播放一个mid文件    \u00a7c-play <ID>',
-        '--stop': '-s 停止播放    \u00a7c-stop',
+        '--stop': '-st 停止播放    \u00a7c-stop',
         '--list': '-ls 列出mid文件    \u00a7c-list [页码]',
-        '--search': '-se 搜索mid文件    \u00a7c-search <内容>',
+        '--search': '-s 搜索mid文件    \u00a7c-search <内容>',
         '--reload': '-re 重新加载mid文件列表    \u00a7c-reload'
     }
     info = '\u00a76mcws midi模块 \u00a7bby HYWT'
@@ -41,7 +46,6 @@ class midiplayer:
     stopping = "正在停止"
     stopped = '已停止'
     load_song = "正在加载 {0}..."
-    invaild_id = 'ID 无效'
     reload = 'mid文件列表已重新加载'
     unknown_command = '未知命令。使用 .midi -h 查看可用命令列表。'
 

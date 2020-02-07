@@ -22,5 +22,5 @@ def getCleanName(file):
 def listFile(path, extensions):
     out = []
     for i in extensions:
-        out.extend(glob.glob(path + "**/*." + i, recursive=True))
+        out.extend(glob.glob(path + "**/*" + i, recursive=True))
     return out

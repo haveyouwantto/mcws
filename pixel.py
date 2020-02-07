@@ -6,7 +6,7 @@ from PIL import Image
 import worldedit
 import message_utils
 import ref_strings
-import fileutils
+from mcws_module import Command, FileIOModule
 
 # 以下为从 code connection 里复制的代码，原为js
 # 进行了一些修改
@@ -90,72 +90,15 @@ def colorToBlock(color):
 
 # 以上
 
-class PixelGenerator:
+class PixelGenerator(FileIOModule):
     def __init__(self, ws, we):
-        self.ws = ws
+        FileIOModule.__init__(self, ws, "images/", (".png", ".jpg", ".bmp"))
         self.we = we
-        self.listFile()
+        self.add_command(Command('--draw', ('-d',)), self.open_file)
 
-    def listFile(self):
-        self.imagelist = fileutils.listFile("images/", ("png", "jpg", "bmp"))
-
-    async def parseCmd(self, args):
-        if args[0] == "--help" or args[0] == "-h" or args[0] == "-?" or args == []:
-            await self.help()
-
-        elif args[0] == "--info" or args[0] == "-i":
-            await self.ws.send(message_utils.info(ref_strings.midiplayer.info))
-            await self.ws.send(message_utils.info(ref_strings.midiplayer.midicount.format(len(self.imagelist))))
-
-        elif args[0] == "--list" or args[0] == "-ls":
-            page = 1
-            if len(args) != 1:
-                page = int(args[1])
-            entries = message_utils.getPage(self.imagelist, page)
-            await message_utils.printEntries(self.ws, entries)
-
-        elif args[0] == "--draw" or args[0] == "-d":
-            arg1 = int(args[1])
-            print(arg1, self.imagelist[arg1])
-            if arg1 < len(self.imagelist):
-                await self.generate(self.imagelist[arg1], await self.we.getPlayerBlockPos())
-            else:
-                await self.ws.send(message_utils.error(ref_strings.file_not_exists))
-
-        elif args[0] == "--search" or args[0] == "-se":
-            if args[1:] == []:
-                await self.ws.send(message_utils.error(ref_strings.search_error))
-                return
-            keyword = " ".join(args[1:]).lower()
-            results = self.search(keyword)
-            if len(results) == 0:
-                await self.ws.send(message_utils.error(ref_strings.empty_result))
-            else:
-                for i in results:
-                    await self.ws.send(
-                        message_utils.info(ref_strings.list_format.format(i[0], i[1])))
-        elif args[0] == "--reload" or args[0] == "-re":
-            await self.reload()
-        else:
-            await self.ws.send(message_utils.error(ref_strings.midiplayer.unknown_command))
-
-    def search(self, keyword):
-        self.lastQuery = keyword
-        results = []
-        keyword = keyword.lower().split(' ')
-        for i in range(len(self.imagelist)):
-            element = self.imagelist[i].lower()
-            priority = 0
-            for j in keyword:
-                if j in element:
-                    priority += 1
-            if priority == len(keyword):
-                results.append((i, self.imagelist[i]))
-        return results
-
-    async def reload(self):
-        self.listFile()
-        await self.ws.send(message_utils.info(ref_strings.midiplayer.reload))
+    async def open(self, filename):
+        await self.ws.send(message_utils.cmd('closechat'))
+        await self.generate(filename, await self.we.getPlayerBlockPos())
 
     async def generate(self, filename, position):
         img = Image.open(filename)
@@ -195,5 +138,5 @@ class PixelGenerator:
                 # 限制指令执行速度
                 sleep(0.002)
 
-    async def help(self):
+    async def help(self, args):
         pass
