@@ -120,6 +120,7 @@ class WorldEdit:
                         )
                     )
                 )
+            await self.ws.send(message_utils.cmd('closechat'))
 
         if args[0] == ".fill":
             if (len(args) == 1 or args[1] == ''):
@@ -139,6 +140,7 @@ class WorldEdit:
 
     async def fill(self, blockname, blockdata=0):
         sequence = generateCoorSequence(self.pos1, self.pos2)
+        await self.ws.send(message_utils.cmd('closechat'))
         for i in sequence['sequence']:
             await self.ws.send(message_utils.cmd("fill {0} {1} {2} {3}".format(i[0], i[1], blockname, blockdata)))
             time.sleep(0.01)
@@ -161,6 +163,7 @@ class WorldEdit:
         await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
         data = await self.ws.recv()
         msg = json.loads(data)
+        print(msg)
         x = msg["body"]["position"]["x"]
         y = msg["body"]["position"]["y"]
         z = msg["body"]["position"]["z"]

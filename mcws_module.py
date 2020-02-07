@@ -2,6 +2,8 @@ import ref_strings
 import message_utils
 import fileutils
 
+import os
+
 
 class Command:
     def __init__(self, cmd, alias):
@@ -59,14 +61,17 @@ class FileIOModule(BaseModule):
     async def list_file(self, args):
         page = 1
         if len(args) != 0:
-            page = int(args[1])
+            page = int(args[0])
         entries = message_utils.getPage(self.file_list, page)
         await message_utils.printEntries(self.ws, entries)
 
     async def search_file(self, args):
+        if len(args) ==0:
+            await self.ws.send(message_utils.error(ref_strings.search_error))
+            return
         results = self.search(args)
         if len(results) == 0:
-            await self.ws.send(message_utils.error(ref_strings.empty_result))
+            await self.ws.send(message_utils.info(ref_strings.empty_result))
         else:
             for i in results:
                 await self.ws.send(
@@ -78,6 +83,9 @@ class FileIOModule(BaseModule):
         try:
             arg1 = int(args[0])
             if arg1 < len(self.file_list):
+                if not os.path.exists(self.file_list[arg1]):
+                    await self.reload(args)
+                    return
                 await self.open(self.file_list[arg1])
             else:
                 await self.ws.send(message_utils.error(ref_strings.file_not_exists))

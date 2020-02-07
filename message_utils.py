@@ -101,12 +101,15 @@ def getPage(_list, page):
 
 async def printEntries(ws, entries):
     if entries != None:
-        start = entries['start']
-        for i in range(10):
+        try:
+            start = entries['start']
+            for i in range(10):
+                await ws.send(
+                    info(ref_strings.list_format.format(i + start, entries['entries'][i])))
             await ws.send(
-                info(ref_strings.list_format.format(i + start, entries['entries'][i])))
-        await ws.send(
-            info(ref_strings.pagenum_format.format(entries['page'], entries['maxpage'])))
+                info(ref_strings.pagenum_format.format(entries['page'], entries['maxpage'])))
+        except IndexError:
+            return
     else:
         await ws.send(error(ref_strings.page_error))
 

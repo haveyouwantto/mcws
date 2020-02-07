@@ -17,7 +17,7 @@ pagenum_format = '第 {0} 页，共 {1} 页'
 
 
 class module:
-    reload = 'm文件列表已重新加载'
+    reload = '文件列表已重新加载'
 
 class mcws:
     help = {

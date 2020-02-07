@@ -104,7 +104,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
     def play(self):
         self.playing = True
 
-    async def stop(self):
+    async def stop(self, args=None):
         await self.ws.send(message_utils.info(ref_strings.midiplayer.stopping))
         self.playing = False
         while self.isPlaying:
@@ -112,7 +112,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
         await self.ws.send(message_utils.info(ref_strings.midiplayer.stopped))
         return
 
-    async def help(self,args):
+    async def help(self, args):
         for i in ref_strings.midiplayer.help:
             await self.ws.send(message_utils.info(i + " , " + ref_strings.midiplayer.help[i]))
 

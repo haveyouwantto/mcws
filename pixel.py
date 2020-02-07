@@ -97,13 +97,13 @@ class PixelGenerator(FileIOModule):
         self.add_command(Command('--draw', ('-d',)), self.open_file)
 
     async def open(self, filename):
-        await self.ws.send(message_utils.cmd('closechat'))
         await self.generate(filename, await self.we.getPlayerBlockPos())
 
     async def generate(self, filename, position):
         img = Image.open(filename)
         size = img.size
 
+        await self.ws.send(message_utils.cmd('closechat'))
         await self.ws.send(message_utils.info(
             ref_strings.pixel.image_info.format(filename, size[0], size[1],
                                                 message_utils.filesize(filename))))
@@ -138,5 +138,5 @@ class PixelGenerator(FileIOModule):
                 # 限制指令执行速度
                 sleep(0.002)
 
-    async def help(self, args):
+    async def help(self, args=None):
         pass
