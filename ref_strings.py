@@ -73,11 +73,12 @@ class import_error:
 class pixel:
     image_info = '{0} 尺寸: {1}x{2} 大小: {3}'
     resize_info = '* 自动缩放到 {0}x{1}'
-    help={
+    start = '开始绘制...'
+    help = {
         '--list': '列出图片文件    \u00a7c--list [页码]',
         '--search': '搜索图片文件    \u00a7c--search <内容>',
         '--reload': '重新加载图片文件列表    \u00a7c--reload',
-        '--draw':'将一张图片生成像素画    \u00a7c--draw <ID>'
+        '--draw': '将一张图片生成像素画    \u00a7c--draw <ID>'
     }
 
 

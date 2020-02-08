@@ -83,6 +83,11 @@ async def setblock(ws, pos, blockname, blockdata=0):
     await ws.send(message_utils.cmd(cmd))
 
 
+async def fill(ws, pos1, pos2, blockname, blockdata=0):
+    cmd = 'fill {0} {1} {2} {3}'.format(pos1, pos2, blockname, blockdata)
+    await ws.send(message_utils.cmd(cmd))
+
+
 # print(generateCoorSequence(Position(127,62,143),Position(-128,62,-112)))
 
 

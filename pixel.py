@@ -110,7 +110,7 @@ class PixelGenerator(FileIOModule):
         await self.ws.send(message_utils.info(
             ref_strings.pixel.image_info.format(filename, size[0], size[1],
                                                 message_utils.filesize(filename))))
-
+        pxs = {}
         max_width = 256
 
         if size[0] > max_width:
@@ -121,6 +121,7 @@ class PixelGenerator(FileIOModule):
             await self.ws.send(message_utils.info(ref_strings.pixel.resize_info.format(size[0], size[1])))
 
         for y in range(size[1]):
+            lastpixel = None
             for x in range(size[0]):
                 px = img.getpixel((x, y))
 
@@ -128,15 +129,40 @@ class PixelGenerator(FileIOModule):
                 if len(px) == 4:
                     # 检测透明度，如果小于128则不放置方块
                     if px[3] < 0x80:
+                        lastpixel = None
                         continue
 
                 # 获取整数颜色值
                 color = (px[0] << 16) | (px[1] << 8) | px[2]
 
                 blockToPlace = colorToBlock(color)
+                fmt = "{0} {1}".format(blockToPlace[0], blockToPlace[1])
 
-                await worldedit.setblock(self.ws, worldedit.Position(position.x + x, position.y, position.z + y),
+                if fmt in pxs:
+                    if lastpixel == fmt:
+                        pxs[fmt][-1][2] += 1
+                    else:
+                        pxs[fmt].append([x, y, 0])
+                else:
+                    pxs[fmt] = [[x, y, 0]]
+
+                lastpixel = fmt
+
+        await self.ws.send(message_utils.info(ref_strings.pixel.start))
+
+        for i in pxs:
+            blockToPlace = i.split(" ")
+            for j in pxs[i]:
+                if j[2] == 0:
+                    await worldedit.setblock(self.ws,
+                                             worldedit.Position(position.x + j[0], position.y, position.z + j[1]),
+                                             blockToPlace[0],
+                                             int(blockToPlace[1]))
+                else:
+                    await worldedit.fill(self.ws,
+                                         worldedit.Position(position.x + j[0], position.y, position.z + j[1]),
+                                         worldedit.Position(position.x + j[0] + j[2], position.y, position.z + j[1]),
                                          blockToPlace[0],
-                                         blockToPlace[1])
-                # 限制指令执行速度
+                                         int(blockToPlace[1]))
+
                 sleep(0.002)
