@@ -6,26 +6,40 @@ import os
 
 
 class Command:
-    def __init__(self, cmd, alias):
+    def __init__(self, cmd, alias, description=""):
         self.cmd = cmd
         self.alias = alias
+        self.description = description
+
+    def __str__(self):
+        alias_str = ""
+        for i in self.alias:
+            alias_str = alias_str + i + " "
+        return "{0}, {1}    {2}".format(self.cmd, alias_str, self.description)
 
 
 class BaseModule:
-    def __init__(self, ws):
-        self.commands = []
+    def __init__(self, ws, name='', description=''):
+        self.commands = {}
         self.ws = ws
-        self.add_command(Command('--help', ('-h', '-?')), self.help)
-        self.add_command(Command('--info', ('-i',)), self.info)
+        self.module_name = name
+        self.description = description
+        self.add_command(Command('--help', ('-h', '-?'), ref_strings.module.help['--help']), self.help)
+        self.add_command(Command('--info', ('-i',), ref_strings.module.help['--info']), self.info)
 
     async def help(self, args):
-        pass
+        await self.ws.send(message_utils.info('{0} - {1}'.format(self.module_name, self.description)))
+        for i in self.commands:
+            await self.ws.send(message_utils.info(str(self.commands[i]["command"])))
 
     async def info(self, args):
         pass
 
     def add_command(self, cmd, onCommand):
-        self.commands.append((cmd, onCommand))
+        self.commands[cmd.cmd] = {
+            "command": cmd,
+            "onCommand": onCommand
+        }
 
     async def no_command(self):
         pass
@@ -35,24 +49,24 @@ class BaseModule:
             await self.no_command()
             return
         for i in self.commands:
-            if i[0].cmd == args[0]:
-                await i[1](args[1:])
+            if i == args[0]:
+                await self.commands[i]["onCommand"](args[1:])
                 return
-            for j in i[0].alias:
+            for j in self.commands[i]["command"].alias:
                 if j == args[0]:
-                    await i[1](args[1:])
+                    await self.commands[i]["onCommand"](args[1:])
                     return
         await self.ws.send(message_utils.error(ref_strings.unknown_command))
 
 
 class FileIOModule(BaseModule):
-    def __init__(self, ws, path, extensions):
-        BaseModule.__init__(self, ws)
+    def __init__(self, ws, path, extensions, name='', description='', ):
+        BaseModule.__init__(self, ws, name, description)
         self.path = path
         self.extensions = extensions
-        self.add_command(Command('--search', ('-s',)), self.search_file)
-        self.add_command(Command('--list', ('-ls',)), self.list_file)
-        self.add_command(Command('--reload', ('-re',)), self.reload)
+        self.add_command(Command('--search', ('-s',), ref_strings.module.help['--search']), self.search_file)
+        self.add_command(Command('--list', ('-ls',), ref_strings.module.help['--list']), self.list_file)
+        self.add_command(Command('--reload', ('-re',), ref_strings.module.help['--reload']), self.reload)
         self.get_file_list()
 
     def get_file_list(self):
@@ -66,7 +80,7 @@ class FileIOModule(BaseModule):
         await message_utils.printEntries(self.ws, entries)
 
     async def search_file(self, args):
-        if len(args) ==0:
+        if len(args) == 0:
             await self.ws.send(message_utils.error(ref_strings.search_error))
             return
         results = self.search(args)

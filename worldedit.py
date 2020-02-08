@@ -153,7 +153,11 @@ class WorldEdit:
         await self.ws.send(message_utils.cmd('querytarget @s'))
         data = await self.ws.recv()
         msg = json.loads(data)
-        detail = json.loads(msg["body"]["details"])[0]
+        while msg.get('body').get('details') == None:
+            await self.ws.send(message_utils.cmd('querytarget @s'))
+            data = await self.ws.recv()
+            msg = json.loads(data)
+        detail = json.loads(msg.get('body').get('details'))[0]
         x = detail["position"]["x"]
         y = detail["position"]["y"]
         z = detail["position"]["z"]
@@ -163,7 +167,10 @@ class WorldEdit:
         await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
         data = await self.ws.recv()
         msg = json.loads(data)
-        print(msg)
+        while msg.get('body').get('position') == None:
+            await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
+            data = await self.ws.recv()
+            msg = json.loads(data)
         x = msg["body"]["position"]["x"]
         y = msg["body"]["position"]["y"]
         z = msg["body"]["position"]["z"]

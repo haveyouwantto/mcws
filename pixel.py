@@ -94,7 +94,10 @@ class PixelGenerator(FileIOModule):
     def __init__(self, ws, we):
         FileIOModule.__init__(self, ws, "images/", (".png", ".jpg", ".bmp"))
         self.we = we
-        self.add_command(Command('--draw', ('-d',)), self.open_file)
+        self.commands['--list']['command'].description = ref_strings.pixel.help['--list']
+        self.commands['--search']['command'].description = ref_strings.pixel.help['--search']
+        self.commands['--reload']['command'].description = ref_strings.pixel.help['--reload']
+        self.add_command(Command('--draw', ('-d',), ref_strings.pixel.help['--draw']), self.open_file)
 
     async def open(self, filename):
         await self.generate(filename, await self.we.getPlayerBlockPos())
@@ -137,6 +140,3 @@ class PixelGenerator(FileIOModule):
                                          blockToPlace[1])
                 # 限制指令执行速度
                 sleep(0.002)
-
-    async def help(self, args=None):
-        pass

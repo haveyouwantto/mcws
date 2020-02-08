@@ -16,7 +16,8 @@ class MidiPlayer(threading.Thread, FileIOModule):
 
     def __init__(self, ws):
         threading.Thread.__init__(self)
-        FileIOModule.__init__(self, ws, 'midis/', ('.mid', '.midi'))
+        FileIOModule.__init__(self, ws, 'midis/', ('.mid', '.midi'), ref_strings.midiplayer.name,
+                              ref_strings.midiplayer.description)
         self.playing = False
         self.mid = None
         self.setName('Midi Player Thread')
@@ -26,8 +27,11 @@ class MidiPlayer(threading.Thread, FileIOModule):
         self.searchResult = []
         self.lastQuery = ""
         self.selector = "@a"
-        self.add_command(Command('--stop', ('-st',)), self.stop)
-        self.add_command(Command('--play', ('-p',)), self.open_file)
+        self.commands['--list']['command'].description = ref_strings.midiplayer.help['--list']
+        self.commands['--search']['command'].description = ref_strings.midiplayer.help['--search']
+        self.commands['--reload']['command'].description = ref_strings.midiplayer.help['--reload']
+        self.add_command(Command('--stop', ('-st',), ref_strings.midiplayer.help['--stop']), self.stop)
+        self.add_command(Command('--play', ('-p',), ref_strings.midiplayer.help['--play']), self.open_file)
 
     async def play_note(self, midimsg, inst, pan, chanvol):
         origin = midimsg.note - 66
@@ -112,9 +116,11 @@ class MidiPlayer(threading.Thread, FileIOModule):
         await self.ws.send(message_utils.info(ref_strings.midiplayer.stopped))
         return
 
+    '''
     async def help(self, args):
         for i in ref_strings.midiplayer.help:
             await self.ws.send(message_utils.info(i + " , " + ref_strings.midiplayer.help[i]))
+    '''
 
     async def info(self, args):
         await self.ws.send(message_utils.info(ref_strings.midiplayer.info))

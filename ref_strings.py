@@ -18,6 +18,14 @@ pagenum_format = '第 {0} 页，共 {1} 页'
 
 class module:
     reload = '文件列表已重新加载'
+    help = {
+        '--info': '显示信息    \u00a7c--info',
+        '--help': '提供帮助/命令列表    \u00a7c--help',
+        '--reload': '重新加载文件列表    \u00a7c--reload',
+        '--list': '列出文件    \u00a7c--list [页码]',
+        '--search': '搜索文件    \u00a7c--search <内容>'
+    }
+
 
 class mcws:
     help = {
@@ -31,15 +39,14 @@ class mcws:
 
 
 class midiplayer:
+    name = 'mcws midi模块'
+    description = '在Minecraft中播放mid音乐'
     help = {
-        'mcws midi模块': '在Minecraft中播放mid音乐',
-        '--info': '-i 显示信息    \u00a7c-info',
-        '--help': '-h -? 提供帮助/命令列表    \u00a7c-help',
-        '--play': '-p 播放一个mid文件    \u00a7c-play <ID>',
-        '--stop': '-st 停止播放    \u00a7c-stop',
-        '--list': '-ls 列出mid文件    \u00a7c-list [页码]',
-        '--search': '-s 搜索mid文件    \u00a7c-search <内容>',
-        '--reload': '-re 重新加载mid文件列表    \u00a7c-reload'
+        '--play': '播放一个mid文件    \u00a7c--play <ID>',
+        '--stop': '停止播放    \u00a7c--stop',
+        '--list': '列出mid文件    \u00a7c--list [页码]',
+        '--search': '搜索mid文件    \u00a7c--search <内容>',
+        '--reload': '重新加载mid文件列表    \u00a7c--reload'
     }
     info = '\u00a76mcws midi模块 \u00a7bby HYWT'
     midicount = "当前有 {0} 首 midi 音乐"
@@ -66,6 +73,12 @@ class import_error:
 class pixel:
     image_info = '{0} 尺寸: {1}x{2} 大小: {3}'
     resize_info = '* 自动缩放到 {0}x{1}'
+    help={
+        '--list': '列出图片文件    \u00a7c--list [页码]',
+        '--search': '搜索图片文件    \u00a7c--search <内容>',
+        '--reload': '重新加载图片文件列表    \u00a7c--reload',
+        '--draw':'将一张图片生成像素画    \u00a7c--draw <ID>'
+    }
 
 
 class xboxapi:
