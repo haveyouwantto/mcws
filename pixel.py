@@ -55,7 +55,7 @@ def RGBToHSV(rgb):
     g1 = rgb[1]/255
     b1 = rgb[2]/255
     cmax = max(r1, g1, b1)
-    cmin = n = min(r1, g1, b1)
+    cmin = min(r1, g1, b1)
     delta = cmax-cmin
 
     if delta == 0:
@@ -77,7 +77,7 @@ def RGBToHSV(rgb):
     return (h, s, v)
 
 
-def ColourDistance(hsv1, hsv2):
+def ColourDistance(rgb_1, rgb_2):
     R_1, G_1, B_1 = rgb_1
     R_2, G_2, B_2 = rgb_2
     rmean = (R_1 + R_2) / 2
