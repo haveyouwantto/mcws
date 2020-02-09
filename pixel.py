@@ -50,7 +50,34 @@ colors = [
 ]
 
 
-def ColourDistance(rgb_1, rgb_2):
+def RGBToHSV(rgb):
+    r1 = rgb[0]/255
+    g1 = rgb[1]/255
+    b1 = rgb[2]/255
+    cmax = max(r1, g1, b1)
+    cmin = n = min(r1, g1, b1)
+    delta = cmax-cmin
+
+    if delta == 0:
+        h = 0
+    elif cmax == r1:
+        h = 60*((g1-b1)/delta+0)
+    elif cmax == g1:
+        h = 60*((g1-b1)/delta+0)
+    elif cmax == b1:
+        h = 60*((g1-b1)/delta+0)
+
+    if cmax == 0:
+        s = 0
+    else:
+        s = delta/cmax
+
+    v = cmax
+
+    return (h, s, v)
+
+
+def ColourDistance(hsv1, hsv2):
     R_1, G_1, B_1 = rgb_1
     R_2, G_2, B_2 = rgb_2
     rmean = (R_1 + R_2) / 2
@@ -78,7 +105,8 @@ def colorToBlock(color):
             c = colors[j]
 
             # 获取该颜色与方块颜色的色差
-            dc = ColourDistance(rgb, (((c[2] >> 16) & 0xff), ((c[2] >> 8) & 0xff), (c[2] & 0xff)))
+            dc = ColourDistance(
+                rgb, (((c[2] >> 16) & 0xff), ((c[2] >> 8) & 0xff), (c[2] & 0xff)))
 
             # 如果色差比之前的更小
             if (i < 0 or dc < best):
@@ -94,10 +122,88 @@ class PixelGenerator(FileIOModule):
     def __init__(self, ws, we):
         FileIOModule.__init__(self, ws, "images/", (".png", ".jpg", ".bmp"))
         self.we = we
+        self.mode = '+x+z'
+        self.modes = ['+x+z', '+x-z', '-x+z',
+                      '-x-z', '+x-y', '-x-y', '+z-y', '-z-y']
         self.commands['--list']['command'].description = ref_strings.pixel.help['--list']
         self.commands['--search']['command'].description = ref_strings.pixel.help['--search']
         self.commands['--reload']['command'].description = ref_strings.pixel.help['--reload']
-        self.add_command(Command('--draw', ('-d',), ref_strings.pixel.help['--draw']), self.open_file)
+        self.add_command(
+            Command('--draw', ('-d',), ref_strings.pixel.help['--draw']), self.open_file)
+        self.add_command(
+            Command('--mode', ('-m',), ref_strings.pixel.help['--mode']), self.set_mode)
+        self.add_command(Command('--man-mode', ('-mm',),
+                                 ref_strings.pixel.help['--man-mode']), self.man_mode)
+
+    async def man_mode(self, args):
+        for i in ref_strings.pixel.mode_help:
+            await self.ws.send(message_utils.info(i))
+        for i in self.modes:
+            await self.ws.send(message_utils.info(i))
+
+    def get_position(self, position, imagesize, imagepos, setblock):
+        if self.mode == '+x+z':
+            pos1 = worldedit.Position(
+                position.x + imagepos[0], position.y, position.z + imagepos[1])
+        elif self.mode == '+x-z':
+            pos1 = worldedit.Position(
+                position.x + imagepos[0], position.y, position.z - imagepos[1])
+        elif self.mode == '-x+z':
+            pos1 = worldedit.Position(
+                position.x - imagepos[0], position.y, position.z + imagepos[1])
+        elif self.mode == '-x-z':
+            pos1 = worldedit.Position(
+                position.x - imagepos[0], position.y, position.z - imagepos[1])
+        elif self.mode == '+x-y':
+            pos1 = worldedit.Position(position.x + imagepos[0], position.y + imagesize[1] - imagepos[1] - 1,
+                                      position.z)
+        elif self.mode == '-x-y':
+            pos1 = worldedit.Position(position.x - imagepos[0], position.y + imagesize[1] - imagepos[1] - 1,
+                                      position.z)
+        elif self.mode == '+z-y':
+            pos1 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
+                                      position.z + imagepos[0])
+        else:  # -z-y
+            pos1 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
+                                      position.z - imagepos[0])
+        if not setblock:
+            if self.mode == '+x+z':
+                pos2 = worldedit.Position(
+                    position.x + imagepos[0] + imagepos[2], position.y, position.z + imagepos[1])
+            elif self.mode == '+x-z':
+                pos2 = worldedit.Position(
+                    position.x + imagepos[0] + imagepos[2], position.y, position.z - imagepos[1])
+            elif self.mode == '-x+z':
+                pos2 = worldedit.Position(
+                    position.x - imagepos[0] - imagepos[2], position.y, position.z + imagepos[1])
+            elif self.mode == '-x-z':
+                pos2 = worldedit.Position(
+                    position.x - imagepos[0] - imagepos[2], position.y, position.z - imagepos[1])
+            elif self.mode == '+x-y':
+                pos2 = worldedit.Position(position.x + imagepos[0] + imagepos[2],
+                                          position.y + imagesize[1] - imagepos[1] - 1, position.z)
+            elif self.mode == '-x-y':
+                pos2 = worldedit.Position(position.x - imagepos[0] - imagepos[2],
+                                          position.y + imagesize[1] - imagepos[1] - 1, position.z)
+            elif self.mode == '+z-y':
+                pos2 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
+                                          position.z + imagepos[0] + imagepos[2])
+            else:  # -z-y
+                pos2 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
+                                          position.z - imagepos[0] - imagepos[2])
+            return (pos1, pos2)
+        else:
+            return pos1
+
+    async def set_mode(self, args):
+        if len(args) > 0:
+            if args[0] in self.modes:
+                self.mode = args[0]
+                await self.ws.send(message_utils.info(ref_strings.pixel.set_mode.format(self.mode)))
+            else:
+                await self.ws.send(message_utils.error(ref_strings.pixel.invaild_mode))
+        else:
+            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
 
     async def open(self, filename):
         await self.generate(filename, await self.we.getPlayerBlockPos())
@@ -154,15 +260,19 @@ class PixelGenerator(FileIOModule):
             blockToPlace = i.split(" ")
             for j in pxs[i]:
                 if j[2] == 0:
+                    pos = self.get_position(position, size, j, True)
                     await worldedit.setblock(self.ws,
-                                             worldedit.Position(position.x + j[0], position.y, position.z + j[1]),
+                                             pos,
                                              blockToPlace[0],
                                              int(blockToPlace[1]))
                 else:
+                    pos = self.get_position(position, size, j, False)
                     await worldedit.fill(self.ws,
-                                         worldedit.Position(position.x + j[0], position.y, position.z + j[1]),
-                                         worldedit.Position(position.x + j[0] + j[2], position.y, position.z + j[1]),
+                                         pos[0],
+                                         pos[1],
                                          blockToPlace[0],
                                          int(blockToPlace[1]))
 
                 sleep(0.002)
+
+        await self.ws.send(message_utils.info(ref_strings.pixel.finish))

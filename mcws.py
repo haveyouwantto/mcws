@@ -148,7 +148,6 @@ async def hello(ws, path):
             websockets.exceptions.ConnectionClosed):
         player.close()
         log.close()
-        sys.exit()
 
 
 if __name__ == '__main__':
