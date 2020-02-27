@@ -7,6 +7,7 @@ import worldedit
 import message_utils
 import ref_strings
 from mcws_module import Command, FileIOModule
+import downloader
 
 # 以下为从 code connection 里复制的代码，原为js
 # 进行了一些修改
@@ -51,26 +52,26 @@ colors = [
 
 
 def RGBToHSV(rgb):
-    r1 = rgb[0]/255
-    g1 = rgb[1]/255
-    b1 = rgb[2]/255
+    r1 = rgb[0] / 255
+    g1 = rgb[1] / 255
+    b1 = rgb[2] / 255
     cmax = max(r1, g1, b1)
     cmin = min(r1, g1, b1)
-    delta = cmax-cmin
+    delta = cmax - cmin
 
     if delta == 0:
         h = 0
     elif cmax == r1:
-        h = 60*((g1-b1)/delta+0)
+        h = 60 * ((g1 - b1) / delta + 0)
     elif cmax == g1:
-        h = 60*((g1-b1)/delta+0)
+        h = 60 * ((g1 - b1) / delta + 0)
     elif cmax == b1:
-        h = 60*((g1-b1)/delta+0)
+        h = 60 * ((g1 - b1) / delta + 0)
 
     if cmax == 0:
         s = 0
     else:
-        s = delta/cmax
+        s = delta / cmax
 
     v = cmax
 
@@ -85,6 +86,11 @@ def ColourDistance(rgb_1, rgb_2):
     G = G_1 - G_2
     B = B_1 - B_2
     return math.sqrt((2 + rmean / 256) * (R ** 2) + 4 * (G ** 2) + (2 + (255 - rmean) / 256) * (B ** 2))
+
+
+# deprecated
+def colordistance(rgb_1, rgb_2):
+    return abs(rgb_1[0] - rgb_2[0]) + abs(rgb_1[1] - rgb_2[1]) + abs(rgb_1[2] - rgb_2[2])
 
 
 def colorToBlock(color):
@@ -105,6 +111,7 @@ def colorToBlock(color):
             c = colors[j]
 
             # 获取该颜色与方块颜色的色差
+
             dc = ColourDistance(
                 rgb, (((c[2] >> 16) & 0xff), ((c[2] >> 8) & 0xff), (c[2] & 0xff)))
 
@@ -134,6 +141,21 @@ class PixelGenerator(FileIOModule):
             Command('--mode', ('-m',), ref_strings.pixel.help['--mode']), self.set_mode)
         self.add_command(Command('--man-mode', ('-mm',),
                                  ref_strings.pixel.help['--man-mode']), self.man_mode)
+        self.add_command(Command('--from-url', ('-u',), ref_strings.pixel.help['--from-url']), self.from_url)
+
+    async def from_url(self, args):
+        pos = await self.we.getPlayerBlockPos()
+        await self.ws.send(message_utils.info(ref_strings.pixel.download_image.format(args[0])))
+        if len(args) == 0:
+            return
+        code = downloader.download_image(args[0])
+        if code[0] == -1:
+            await self.ws.send(message_utils.error(ref_strings.pixel.web_error.format(args[0])))
+            return
+        if code[0] == 1:
+            await self.ws.send(message_utils.error(ref_strings.pixel.mime_error.format(code[1])))
+            return
+        await self.generate('cache/img', pos)
 
     async def man_mode(self, args):
         for i in ref_strings.pixel.mode_help:
@@ -217,7 +239,8 @@ class PixelGenerator(FileIOModule):
             ref_strings.pixel.image_info.format(filename, size[0], size[1],
                                                 message_utils.filesize(filename))))
         pxs = {}
-        max_width = 256
+        max_width = 16 << 4
+        pal = img.getpalette()
 
         if size[0] > max_width:
             ratio = size[0] / size[1]
@@ -231,15 +254,24 @@ class PixelGenerator(FileIOModule):
             for x in range(size[0]):
                 px = img.getpixel((x, y))
 
+                # PAL8 图片
+                if isinstance(px, int):
+                    index = px*3
+                    color = (pal[index] << 16) | (pal[index+1] << 8) | pal[index+2]
+
+                # RGB 图片
+                elif len(px) == 3:
+                    color = (px[0] << 16) | (px[1] << 8) | px[2]
+
                 # RGBA 图片
-                if len(px) == 4:
+                elif len(px) == 4:
                     # 检测透明度，如果小于128则不放置方块
                     if px[3] < 0x80:
                         lastpixel = None
                         continue
 
-                # 获取整数颜色值
-                color = (px[0] << 16) | (px[1] << 8) | px[2]
+                    # 获取整数颜色值
+                    color = (px[0] << 16) | (px[1] << 8) | px[2]
 
                 blockToPlace = colorToBlock(color)
                 fmt = "{0} {1}".format(blockToPlace[0], blockToPlace[1])

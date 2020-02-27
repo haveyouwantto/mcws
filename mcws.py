@@ -14,6 +14,7 @@ import ref_strings
 import chat_logger
 import worldedit
 import mcws_module
+import perfinfo
 
 import_midiplayer = True
 import_pixel = True
@@ -30,8 +31,15 @@ except ModuleNotFoundError:
 
 scoreRegex = r'((- )([\s\S]+?)(: )([-\d]+?)( \()([\s\S][^)]*?)(\)+?))'
 
+debug=False
 
 async def hello(ws, path):
+
+    sent = 0
+
+    perf = perfinfo.Info()
+    perf.start()
+
     # 加载各模块
     if import_midiplayer:
         player = midiplayer.MidiPlayer(ws)
@@ -64,6 +72,8 @@ async def hello(ws, path):
         while True:
             data = await ws.recv()
             msg = json.loads(data)
+            sent += 1
+            sent = 0
             if msg["header"]["messagePurpose"] == "event":
 
                 if msg["body"]["eventName"] == "PlayerMessage" and msg["body"]["properties"]["Sender"] != sender and \
@@ -75,7 +85,9 @@ async def hello(ws, path):
 
                     args = raw.split(" ")
 
-                    if msg["body"]["properties"]["Sender"] == host:
+                    executor=msg["body"]["properties"]["Sender"]
+
+                    if executor == host:
 
                         await we.parseCmd(args)
 
@@ -99,8 +111,12 @@ async def hello(ws, path):
                             except FileNotFoundError:
                                 await ws.send(message_utils.error(ref_strings.file_not_exists))
 
-                        if args[0]==".test":
+                        if args[0] == ".test":
                             await mod.parse_command('--search touhou')
+
+                        if args[0] == '.exit':
+                            await ws.send(message_utils.info('bye!'))
+                            raise KeyboardInterrupt
 
                     if args[0] == ".info":
                         await ws.send(message_utils.info(ref_strings.mcws.info))
@@ -144,10 +160,13 @@ async def hello(ws, path):
 
             elif msg["header"]["messagePurpose"] == "commandResponse":
                 pass
+        
     except (KeyboardInterrupt, websockets.exceptions.ConnectionClosedOK, websockets.exceptions.ConnectionClosedError,
             websockets.exceptions.ConnectionClosed):
         player.close()
         log.close()
+        perf.close()
+        sys.exit()
 
 
 if __name__ == '__main__':

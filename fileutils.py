@@ -24,3 +24,7 @@ def listFile(path, extensions):
     for i in extensions:
         out.extend(glob.glob(path + "**/*" + i, recursive=True))
     return out
+
+def mkdirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)

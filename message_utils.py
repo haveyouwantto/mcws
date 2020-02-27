@@ -5,6 +5,7 @@ import os
 from colorama import Fore
 
 import ref_strings
+import stats
 
 sub = json.dumps({
     "body": {
@@ -18,8 +19,9 @@ sub = json.dumps({
     }
 })
 
-
 def cmd(line, uuid="ffff0000-0000-0000-0000-000000000000"):
+    print(line)
+    stats.sent += 1
     return json.dumps({
         "body": {
             "origin": {
@@ -44,17 +46,17 @@ def log(msg):
     print(Fore.WHITE+msg)
 
 def info(msg):
-    print(Fore.MAGENTA+msg)
+    #print(Fore.MAGENTA+msg)
     return cmd("say \u00a7d" + str(msg))
 
 
 def warning(msg):
-    print(Fore.YELLOW+msg)
+    #print(Fore.YELLOW+msg)
     return cmd("say \u00a7d" + str(msg))
 
 
 def error(msg):
-    print(Fore.RED+msg)
+    #print(Fore.RED+msg)
     return cmd("say \u00a7c" + str(msg))
 
 
@@ -120,15 +122,24 @@ def runmain(coroutine):
     except StopIteration as e:
         return e.value
 
-suffix = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi']
+suffix = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
-def toSI(n):
-    k = 1024
+def toSI(n, bin = False):
+    if n < 1000:
+        return  "{0:.3g}".format(n)
+    if bin:
+        k = 1024
+    else:
+        k = 1000
     for i in suffix:
         if n < k:
-            return "{0:.2f} {1}".format(n, i)
+            if bin:
+                return "{0:.3g} {1}i".format(n, i)
+            else:
+                return "{0:.3g} {1}".format(n, i)
+
         n /= k
 
 def filesize(filename):
     size=os.path.getsize(filename)
-    return toSI(size)+'B'
+    return toSI(size, True)+'B'

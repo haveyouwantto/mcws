@@ -2,9 +2,11 @@ midis/*
 functions/*
 images/*
 .idea/
+bin/
 __pycache__/
 cache/*
 chat_logs/*
+stats/
 log.txt
 login.txt
 .vscode/
@@ -12,3 +14,4 @@ test.py
 note.txt
 b.recv
 sim.js
+ops.json

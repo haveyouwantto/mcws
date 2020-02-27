@@ -3,6 +3,8 @@ import message_utils
 import fileutils
 
 import os
+import traceback
+import sys
 
 
 class Command:
@@ -45,18 +47,22 @@ class BaseModule:
         pass
 
     async def parse_command(self, args):
-        if len(args) == 0:
-            await self.no_command()
-            return
-        for i in self.commands:
-            if i == args[0]:
-                await self.commands[i]["onCommand"](args[1:])
+        try:
+            if len(args) == 0:
+                await self.no_command()
                 return
-            for j in self.commands[i]["command"].alias:
-                if j == args[0]:
+            for i in self.commands:
+                if i == args[0]:
                     await self.commands[i]["onCommand"](args[1:])
                     return
-        await self.ws.send(message_utils.error(ref_strings.unknown_command))
+                for j in self.commands[i]["command"].alias:
+                    if j == args[0]:
+                        await self.commands[i]["onCommand"](args[1:])
+                        return
+            await self.ws.send(message_utils.error(ref_strings.unknown_command))
+        except Exception as e:
+            await self.ws.send(message_utils.error('{0}: {1}'.format(type(e).__name__,e)))
+            traceback.print_exc(file=sys.stdout)
 
 
 class FileIOModule(BaseModule):

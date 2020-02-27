@@ -46,13 +46,14 @@ class midiplayer:
         '--stop': '停止播放    \u00a7c--stop',
         '--list': '列出mid文件    \u00a7c--list [页码]',
         '--search': '搜索mid文件    \u00a7c--search <内容>',
-        '--reload': '重新加载mid文件列表    \u00a7c--reload'
+        '--reload': '重新加载mid文件列表    \u00a7c--reload',
+        '--from-url': '从互联网下载音乐进行播放    \u00a7c--from-url <URL>'
     }
     info = '\u00a76mcws midi模块 \u00a7bby HYWT'
     midicount = "当前有 {0} 首 midi 音乐"
     stopping = "正在停止"
     stopped = '已停止'
-    load_song = "正在加载 {0}..."
+    load_song = "正在加载 {0}... ({1})"
     reload = 'mid文件列表已重新加载'
     unknown_command = '未知命令。使用 .midi -h 查看可用命令列表。'
 
@@ -117,12 +118,16 @@ class pixel:
         '--search': '搜索图片文件    \u00a7c--search <内容>',
         '--reload': '重新加载图片文件列表    \u00a7c--reload',
         '--draw': '将一张图片生成像素画    \u00a7c--draw <ID>',
-        '--mode': '选择生成像素画的放置模式',
-        '--man-mode': '有关放置模式的说明书'
+        '--mode': '选择生成像素画的放置模式    \u00a7c--mode <模式>',
+        '--man-mode': '有关放置模式的说明书    \u00a7c--man-mode',
+        '--from-url': '从互联网下载图片进行绘制    \u00a7c--from-url <URL>'
     }
     set_mode = '将放置模式设置成 {0}'
     invaild_mode = '模式无效'
     current_mode= '当前模式: {0}'
+    download_image='正在获取 {0}...'
+    mime_error='文件类型无效: {0}'
+    web_error='无法访问 {0}'
 
 
 class xboxapi:
