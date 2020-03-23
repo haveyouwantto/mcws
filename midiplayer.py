@@ -221,13 +221,14 @@ class MidiPlayer(threading.Thread, FileIOModule):
                                 message_utils.runmain(self.updatekey())
                             except:
                                 message_utils.warning('unable to remove key')
-                        if msg.channel != 9:
-                            message_utils.runmain(
-                                self.play_note(msg, inst[msg.channel], pan[msg.channel],
-                                               channel_volume[msg.channel]))
-                        else:
-                            message_utils.runmain(self.play_perc(
-                                msg, pan[msg.channel], channel_volume[msg.channel]))
+                        if msg.type == 'note_on' and msg.velocity != 0:
+                            if msg.channel != 9:
+                                message_utils.runmain(
+                                    self.play_note(msg, inst[msg.channel], pan[msg.channel],
+                                                channel_volume[msg.channel]))
+                            else:
+                                message_utils.runmain(self.play_perc(
+                                    msg, pan[msg.channel], channel_volume[msg.channel]))
 
                     elif msg.type == "program_change":
                         inst[msg.channel] = msg.program
