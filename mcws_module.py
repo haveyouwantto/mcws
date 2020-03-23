@@ -24,10 +24,14 @@ class BaseModule:
     def __init__(self, ws, name='', description=''):
         self.commands = {}
         self.ws = ws
+        self.module_id = self.__class__.__name__
         self.module_name = name
         self.description = description
-        self.add_command(Command('--help', ('-h', '-?'), ref_strings.module.help['--help']), self.help)
-        self.add_command(Command('--info', ('-i',), ref_strings.module.help['--info']), self.info)
+        self.add_command(Command('--help', ('-h', '-?', 'help'), ref_strings.module.help['--help']), self.help)
+        self.add_command(Command('--info', ('-i', 'info'), ref_strings.module.help['--info']), self.info)
+        self.add_command(Command('--list-config',('-lc',),ref_strings.module.help['--list-config']),self.list_config)
+        self.config = {}
+        self.default_config={}
 
     async def help(self, args):
         await self.ws.send(message_utils.info('{0} - {1}'.format(self.module_name, self.description)))
@@ -46,6 +50,9 @@ class BaseModule:
     async def no_command(self):
         pass
 
+    async def list_config(self, args):
+        await self.ws.send(message_utils.info('{0}: {1}'.format(self.module_name, self.config)))
+
     async def parse_command(self, args):
         try:
             if len(args) == 0:
@@ -61,8 +68,11 @@ class BaseModule:
                         return
             await self.ws.send(message_utils.error(ref_strings.unknown_command))
         except Exception as e:
-            await self.ws.send(message_utils.error('{0}: {1}'.format(type(e).__name__,e)))
+            await self.ws.send(message_utils.error('{0}: {1}'.format(type(e).__name__, e)))
             traceback.print_exc(file=sys.stdout)
+
+    def set_config(self, config):
+        self.config = config
 
 
 class FileIOModule(BaseModule):
@@ -70,9 +80,11 @@ class FileIOModule(BaseModule):
         BaseModule.__init__(self, ws, name, description)
         self.path = path
         self.extensions = extensions
-        self.add_command(Command('--search', ('-s',), ref_strings.module.help['--search']), self.search_file)
-        self.add_command(Command('--list', ('-ls',), ref_strings.module.help['--list']), self.list_file)
-        self.add_command(Command('--reload', ('-re',), ref_strings.module.help['--reload']), self.reload)
+        self.index = 0
+        self.add_command(Command('--search', ('-s', 'search'), ref_strings.module.help['--search']), self.search_file)
+        self.add_command(Command('--list', ('-ls', 'list'), ref_strings.module.help['--list']), self.list_file)
+        self.add_command(Command('--reload', ('-re', 'reload'), ref_strings.module.help['--reload']), self.reload)
+        self.add_command(Command('--list-by-id', ('-lsi',),ref_strings.module.help['--list-by-id']), self.list_file_by_id)
         self.get_file_list()
 
     def get_file_list(self):
@@ -82,6 +94,13 @@ class FileIOModule(BaseModule):
         page = 1
         if len(args) != 0:
             page = int(args[0])
+        entries = message_utils.getPage(self.file_list, page)
+        await message_utils.printEntries(self.ws, entries)
+
+    async def list_file_by_id(self, args):
+        page = 1
+        if len(args) != 0:
+            page = int(args[0]) // 10 + 1
         entries = message_utils.getPage(self.file_list, page)
         await message_utils.printEntries(self.ws, entries)
 
@@ -106,13 +125,14 @@ class FileIOModule(BaseModule):
                 if not os.path.exists(self.file_list[arg1]):
                     await self.reload(args)
                     return
-                await self.open(self.file_list[arg1])
+                self.index = arg1
+                await self.open(arg1)
             else:
                 await self.ws.send(message_utils.error(ref_strings.file_not_exists))
         except ValueError:
             await self.ws.send(message_utils.error(ref_strings.invaild_id))
 
-    async def open(self, filename):
+    async def open(self, index):
         pass
 
     async def reload(self, args):

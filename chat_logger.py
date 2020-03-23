@@ -8,6 +8,8 @@ import fileutils
 import message_utils
 import ref_strings
 
+from mcws_module import BaseModule
+
 import_avatar = True
 try:
     import avatardownload as avatar
@@ -18,13 +20,17 @@ except ImportError:
 
 # import xbox
 
-class ChatLogger:
+class ChatLogger(BaseModule):
     def __init__(self, ws):
-        self.ws = ws
+        BaseModule.__init__(self, ws)
         self.players = []
         self.history_players = []
         for i in glob.glob('cache/avatar/*.png'):
             self.history_players.append(fileutils.getCleanName(i))
+        self.config = {}
+        self.default_config = {
+            'downloadAvatar': False
+        }
 
     async def getHost(self):
         await self.ws.send(message_utils.cmd('getlocalplayername'))
@@ -58,7 +64,7 @@ class ChatLogger:
 
         if sender not in self.history_players:
             self.history_players.append(sender)
-            if import_avatar:
+            if import_avatar and self.config['downloadAvatar']:
                 avatar.download_avatar(sender)
 
         if sender not in self.players:
@@ -85,8 +91,11 @@ class ChatLogger:
                 shutil.copyfile('template/' + file, out + file)
 
             for name in self.players:
-                shutil.copyfile('cache/avatar/' + name + '.png',
+                try:
+                    shutil.copyfile('cache/avatar/' + name + '.png',
                                 os.path.join(out, 'avatar/', name + '.png'))
+                except:
+                    message_utils.warning('player ' + name + ' not found')
 
             outjson = json.dumps(self.chatmsg)
             datajs = open(out + 'data.js', 'w', encoding='utf-8-sig')

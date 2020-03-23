@@ -7,6 +7,8 @@ from colorama import Fore
 import ref_strings
 import stats
 
+log_command = False
+
 sub = json.dumps({
     "body": {
         "eventName": "PlayerMessage"
@@ -19,8 +21,10 @@ sub = json.dumps({
     }
 })
 
+
 def cmd(line, uuid="ffff0000-0000-0000-0000-000000000000"):
-    print(line)
+    if log_command:
+        print(line)
     stats.sent += 1
     return json.dumps({
         "body": {
@@ -42,21 +46,23 @@ def cmd(line, uuid="ffff0000-0000-0000-0000-000000000000"):
 def getChat(msg):
     return msg["body"]["properties"]["Message"]
 
+
 def log(msg):
-    print(Fore.WHITE+msg)
+    print(Fore.WHITE + msg)
+
 
 def info(msg):
-    #print(Fore.MAGENTA+msg)
+    print(Fore.MAGENTA+msg)
     return cmd("say \u00a7d" + str(msg))
 
 
 def warning(msg):
-    #print(Fore.YELLOW+msg)
+    print(Fore.YELLOW+msg)
     return cmd("say \u00a7d" + str(msg))
 
 
 def error(msg):
-    #print(Fore.RED+msg)
+    print(Fore.RED+msg)
     return cmd("say \u00a7c" + str(msg))
 
 
@@ -100,7 +106,6 @@ def getPage(_list, page):
         'maxpage': maxpage
     }
 
-
 async def printEntries(ws, entries):
     if entries != None:
         try:
@@ -122,11 +127,13 @@ def runmain(coroutine):
     except StopIteration as e:
         return e.value
 
+
 suffix = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
-def toSI(n, bin = False):
+
+def toSI(n, bin=False):
     if n < 1000:
-        return  "{0:.3g}".format(n)
+        return "{0:.3g}".format(n)
     if bin:
         k = 1024
     else:
@@ -140,6 +147,7 @@ def toSI(n, bin = False):
 
         n /= k
 
+
 def filesize(filename):
-    size=os.path.getsize(filename)
-    return toSI(size, True)+'B'
+    size = os.path.getsize(filename)
+    return toSI(size, True) + 'B'

@@ -31,27 +31,54 @@ except ModuleNotFoundError:
 
 scoreRegex = r'((- )([\s\S]+?)(: )([-\d]+?)( \()([\s\S][^)]*?)(\)+?))'
 
-debug=False
 
 async def hello(ws, path):
-
     sent = 0
+    modules = []
+    config = {}
+    message_utils.log_command = False
 
     perf = perfinfo.Info()
     perf.start()
+    modules.append(perf)
+
+    log = chat_logger.ChatLogger(ws)
+    host = await log.getHost()
+    modules.append(log)
+
+    we = worldedit.WorldEdit(ws)
 
     # 加载各模块
     if import_midiplayer:
         player = midiplayer.MidiPlayer(ws)
         player.start()
-
-    log = chat_logger.ChatLogger(ws)
-    host = await log.getHost()
-
-    we = worldedit.WorldEdit(ws)
+        modules.append(player)
 
     if import_pixel:
         pixlegen = pixel.PixelGenerator(ws, we)
+        modules.append(pixlegen)
+
+    if os.path.exists('config.json'):
+        with open('config.json') as f:
+            config = json.loads(f.read())
+
+        for module in modules:
+            try:
+                module.set_config(config[module.module_id])
+            except KeyError:
+                module.config = module.default_config
+                continue
+
+            for i in module.default_config:
+                if i not in module.config:
+                    module.config[i] = module.default_config[i]
+
+        message_utils.log_command = config['debug']
+    else:
+        for module in modules:
+            module.config = module.default_config
+
+    print(config)
 
     await ws.send(message_utils.info(ref_strings.loading))
 
@@ -61,8 +88,6 @@ async def hello(ws, path):
     sender = "外部"
 
     await ws.send(message_utils.info(ref_strings.mcws.welcome))
-
-    mod = mcws_module.FileIOModule(ws, 'midis/', ('.mid', '.midi'))
 
     # await ws.send(message_utils.cmd("enableencryption \"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEfHXre8wewVRVY/cCpVP+Rz7ZJg/jxe+ITuhiMeHsr8QdGFzQrn9IU6c3qCdQbi4sf636uIXEwBsQGmgU/JbxO8ugbqMUFswWccPhqpdeCY2CihdHVOsCD1oC9s/hkEnl\" \"7JwjF0k1G1ATc3akeZvgIw==\""))
     # print(await ws.recv())
@@ -85,7 +110,7 @@ async def hello(ws, path):
 
                     args = raw.split(" ")
 
-                    executor=msg["body"]["properties"]["Sender"]
+                    executor = msg["body"]["properties"]["Sender"]
 
                     if executor == host:
 
@@ -99,7 +124,8 @@ async def hello(ws, path):
                         if args[0] == ".getscore":
                             await ws.send(message_utils.cmd("scoreboard players list @s"))
                             msg2 = json.loads(await ws.recv())
-                            match = re.findall(scoreRegex, msg2.get("body").get("statusMessage"))
+                            match = re.findall(scoreRegex, msg2.get(
+                                "body").get("statusMessage"))
                             out = {}
                             for i in match:
                                 out[i[2]] = i[4]
@@ -112,7 +138,15 @@ async def hello(ws, path):
                                 await ws.send(message_utils.error(ref_strings.file_not_exists))
 
                         if args[0] == ".test":
-                            await mod.parse_command('--search touhou')
+                            pass
+
+                        if args[0] == ".debug":
+                            if len(args) == 1:
+                                continue
+                            if args[1] == '0':
+                                message_utils.log_command = False
+                            elif args[1] == '1':
+                                message_utils.log_command = True
 
                         if args[0] == '.exit':
                             await ws.send(message_utils.info('bye!'))
@@ -160,12 +194,17 @@ async def hello(ws, path):
 
             elif msg["header"]["messagePurpose"] == "commandResponse":
                 pass
-        
+
     except (KeyboardInterrupt, websockets.exceptions.ConnectionClosedOK, websockets.exceptions.ConnectionClosedError,
             websockets.exceptions.ConnectionClosed):
         player.close()
         log.close()
-        perf.close()
+        for i in modules:
+            config[i.module_id] = i.config
+        config['debug'] = message_utils.log_command
+        print(config)
+        with open('config.json', 'w') as f:
+            f.write(json.dumps(config))
         sys.exit()
 
 

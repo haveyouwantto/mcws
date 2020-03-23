@@ -18,6 +18,9 @@ def copyFolder(folder, dest):
 def getCleanName(file):
     return os.path.basename(file).split('.')[0]
 
+def removeExtension(file):
+    return ".".join(getCleanName(file)[:-1])
+
 
 def listFile(path, extensions):
     out = []

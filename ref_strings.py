@@ -23,7 +23,9 @@ class module:
         '--help': '提供帮助/命令列表    \u00a7c--help',
         '--reload': '重新加载文件列表    \u00a7c--reload',
         '--list': '列出文件    \u00a7c--list [页码]',
-        '--search': '搜索文件    \u00a7c--search <内容>'
+        '--list-by-id':'根据文件id列出页面    \u00a7c--list-by-id [id]',
+        '--search': '搜索文件    \u00a7c--search <内容>',
+        '--list-config':'显示当前模块的配置信息    \u00a7c--list-config'
     }
 
 
@@ -44,18 +46,27 @@ class midiplayer:
     help = {
         '--play': '播放一个mid文件    \u00a7c--play <ID>',
         '--stop': '停止播放    \u00a7c--stop',
+        '--playing': '显示正在播放的文件',
+        '--loop': '设置播放模式',
         '--list': '列出mid文件    \u00a7c--list [页码]',
         '--search': '搜索mid文件    \u00a7c--search <内容>',
         '--reload': '重新加载mid文件列表    \u00a7c--reload',
-        '--from-url': '从互联网下载音乐进行播放    \u00a7c--from-url <URL>'
+        '--from-url': '从互联网下载音乐进行播放    \u00a7c--from-url <URL>',
+        '--keyboard': '设置是否显示键盘    \u00a7c--keyboard <0|1>',
+        '--pan-by-pitch': '设置音高是否决定声音位置    \u00a7c--pan-by-pitch <0|1>'
     }
     info = '\u00a76mcws midi模块 \u00a7bby HYWT'
     midicount = "当前有 {0} 首 midi 音乐"
     stopping = "正在停止"
     stopped = '已停止'
-    load_song = "正在加载 {0}... ({1})"
+    load_song = "正在加载 [\u00a7c{0}\u00a7d] - {1}... ({2})"
     reload = 'mid文件列表已重新加载'
     unknown_command = '未知命令。使用 .midi -h 查看可用命令列表。'
+    keyboard_enable = '键盘显示: 开启'
+    keyboard_disable = '键盘显示: 关闭'
+    by_pitch_enable = '音高决定声音位置: 开启'
+    by_pitch_disable = '音高决定声音位置: 关闭'
+    playing = '正在播放: [\u00a7c{0}\u00a7d] - {1}'
 
 
 class worldedit:
@@ -72,6 +83,7 @@ class import_error:
 
 
 class pixel:
+    name = '像素画生成器'
     image_info = '{0} 尺寸: {1}x{2} 大小: {3}'
     resize_info = '* 自动缩放到 {0}x{1}'
     start = '开始绘制...'
@@ -124,10 +136,10 @@ class pixel:
     }
     set_mode = '将放置模式设置成 {0}'
     invaild_mode = '模式无效'
-    current_mode= '当前模式: {0}'
-    download_image='正在获取 {0}...'
-    mime_error='文件类型无效: {0}'
-    web_error='无法访问 {0}'
+    current_mode = '当前模式: {0}'
+    download_image = '正在获取 {0}...'
+    mime_error = '文件类型无效: {0}'
+    web_error = '无法访问 {0}'
 
 
 class xboxapi:

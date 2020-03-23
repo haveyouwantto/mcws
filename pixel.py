@@ -127,11 +127,12 @@ def colorToBlock(color):
 
 class PixelGenerator(FileIOModule):
     def __init__(self, ws, we):
-        FileIOModule.__init__(self, ws, "images/", (".png", ".jpg", ".bmp"))
+        FileIOModule.__init__(self, ws, "images/", (".png", ".jpg", ".bmp"),'PixelGenerator')
         self.we = we
         self.mode = '+x+z'
         self.modes = ['+x+z', '+x-z', '-x+z',
                       '-x-z', '+x-y', '-x-y', '+z-y', '-z-y']
+        self.big = False
         self.commands['--list']['command'].description = ref_strings.pixel.help['--list']
         self.commands['--search']['command'].description = ref_strings.pixel.help['--search']
         self.commands['--reload']['command'].description = ref_strings.pixel.help['--reload']
@@ -227,8 +228,9 @@ class PixelGenerator(FileIOModule):
         else:
             await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
 
-    async def open(self, filename):
-        await self.generate(filename, await self.we.getPlayerBlockPos())
+    async def open(self, index):
+        pos = await self.we.getPlayerBlockPos()
+        await self.generate(self.file_list[index], pos)
 
     async def generate(self, filename, position):
         img = Image.open(filename)
@@ -238,9 +240,30 @@ class PixelGenerator(FileIOModule):
         await self.ws.send(message_utils.info(
             ref_strings.pixel.image_info.format(filename, size[0], size[1],
                                                 message_utils.filesize(filename))))
-        pxs = {}
         max_width = 16 << 4
-        pal = img.getpalette()
+
+        if self.big:
+            block_size = 128
+            await self.ws.send(message_utils.info('block size = {0}'.format(block_size)))
+            for x in range(0, size[0], block_size):
+                for y in range(0, size[1], block_size):
+                    if size[0] - x < block_size:
+                        x2 = size[0]
+                    else:
+                        x2 = x + block_size - 1
+                    if size[1] - y < block_size:
+                        y2 = size[1]
+                    else:
+                        y2 = y + block_size - 1
+                    print(x, y, x2, y2)
+                    tempimage = img.crop((x, y, x2 + 1, y2 + 1))
+                    temppos = worldedit.Position(position.x + x, position.y,
+                                                 position.z + y)
+                    print(temppos)
+                    await self.ws.send(message_utils.cmd('tp @p ' + str(temppos)))
+                    await self.draw(tempimage, temppos)
+
+            return
 
         if size[0] > max_width:
             ratio = size[0] / size[1]
@@ -249,6 +272,13 @@ class PixelGenerator(FileIOModule):
             size = resize
             await self.ws.send(message_utils.info(ref_strings.pixel.resize_info.format(size[0], size[1])))
 
+        await self.draw(img, position)
+
+    async def draw(self, img, position):
+        size = img.size
+        pal = img.getpalette()
+        pxs = {}
+
         for y in range(size[1]):
             lastpixel = None
             for x in range(size[0]):
@@ -256,8 +286,8 @@ class PixelGenerator(FileIOModule):
 
                 # PAL8 图片
                 if isinstance(px, int):
-                    index = px*3
-                    color = (pal[index] << 16) | (pal[index+1] << 8) | pal[index+2]
+                    index = px * 3
+                    color = (pal[index] << 16) | (pal[index + 1] << 8) | pal[index + 2]
 
                 # RGB 图片
                 elif len(px) == 3:
