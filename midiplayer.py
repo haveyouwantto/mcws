@@ -89,14 +89,20 @@ class MidiPlayer(threading.Thread, FileIOModule):
         self.commands['--search']['command'].description = ref_strings.midiplayer.help['--search']
         self.commands['--reload']['command'].description = ref_strings.midiplayer.help['--reload']
 
-        self.add_command(Command('--stop', ('-st', 'stop'), ref_strings.midiplayer.help['--stop']), self.stop)
-        self.add_command(Command('--play', ('-p','play'), ref_strings.midiplayer.help['--play']), self.open_file)
-        self.add_command(Command('--from-url', ('-u',), ref_strings.midiplayer.help['--from-url']), self.from_url)
-        self.add_command(Command('--keyboard', ('-k',), ref_strings.midiplayer.help['--keyboard']), self.set_keyboard)
+        self.add_command(Command('--stop', ('-st', 'stop'),
+                                 ref_strings.midiplayer.help['--stop']), self.stop)
+        self.add_command(Command('--play', ('-p', 'play'),
+                                 ref_strings.midiplayer.help['--play']), self.open_file)
+        self.add_command(Command('--from-url', ('-u',),
+                                 ref_strings.midiplayer.help['--from-url']), self.from_url)
+        self.add_command(Command('--keyboard', ('-k', 'keyboard'),
+                                 ref_strings.midiplayer.help['--keyboard']), self.set_keyboard)
         self.add_command(Command('--pan-by-pitch', ('-pp',), ref_strings.midiplayer.help['--pan-by-pitch']),
                          self.set_pan_by_pitch)
-        self.add_command(Command('--playing', ('-pl','playing'), ref_strings.midiplayer.help['--playing']), self.show_playing)
-        self.add_command(Command('--loop', ('-l','loop'), ref_strings.midiplayer.help['--loop']), self.set_loop)
+        self.add_command(Command('--playing', ('-pl', 'playing'),
+                                 ref_strings.midiplayer.help['--playing']), self.show_playing)
+        self.add_command(Command('--loop', ('-l', 'loop'),
+                                 ref_strings.midiplayer.help['--loop']), self.set_loop)
 
         self.default_config = {
             'displayKeyboard': False,
@@ -178,12 +184,12 @@ class MidiPlayer(threading.Thread, FileIOModule):
 
     async def playsound(self, selector, sound, pan, volume, pitch):
         await self.ws.send(
-            message_utils.cmd("execute {0} ~ ~ ~ playsound {1} @s ^{2:.4n} ^ ^ {3:.4n} {4:.4n}".format(
+            message_utils.cmd("execute {0} ~ ~ ~ playsound {1} @s ^{2} ^ ^ {3} {4}".format(
                 selector,
                 sound,
-                pan,
-                volume,
-                pitch
+                message_utils.formatNumber(pan),
+                message_utils.formatNumber(volume),
+                message_utils.formatNumber(pitch)
             ))
         )
 
@@ -198,58 +204,77 @@ class MidiPlayer(threading.Thread, FileIOModule):
                 channel_volume = [1, 1, 1, 1, 1, 1,
                                   1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 self.isPlaying = True
-                for msg in self.mid.play():
-                    if (not self.playing) or self.isClosed:
-                        self.isPlaying = False
-                        break
+                try:
+                    for msg in self.mid.play():
+                        if (not self.playing) or self.isClosed:
+                            self.isPlaying = False
+                            break
 
-                    if msg.type == "note_on" or msg.type == 'note_off':
+                        if msg.type == "note_on" or msg.type == 'note_off':
 
-                        if self.config['displayKeyboard']:
-                            try:
-                                if msg.type == 'note_off' or msg.velocity == 0:
-                                    self.keyboard.remove({
-                                        'note': msg.note,
-                                        'channel': msg.channel
-                                    })
+                            if self.config['displayKeyboard']:
+                                try:
+                                    if msg.type == 'note_off' or msg.velocity == 0:
+                                        self.keyboard.remove({
+                                            'note': msg.note,
+                                            'channel': msg.channel
+                                        })
 
-                                if msg.type == 'note_on' and msg.velocity != 0:
-                                    self.keyboard.add({
-                                        'note': msg.note,
-                                        'channel': msg.channel
-                                    })
-                                message_utils.runmain(self.updatekey())
-                            except:
-                                message_utils.warning('unable to remove key')
-                        if msg.type == 'note_on' and msg.velocity != 0:
-                            if msg.channel != 9:
-                                message_utils.runmain(
-                                    self.play_note(msg, inst[msg.channel], pan[msg.channel],
-                                                channel_volume[msg.channel]))
-                            else:
-                                message_utils.runmain(self.play_perc(
-                                    msg, pan[msg.channel], channel_volume[msg.channel]))
+                                    if msg.type == 'note_on' and msg.velocity != 0:
+                                        self.keyboard.add({
+                                            'note': msg.note,
+                                            'channel': msg.channel
+                                        })
+                                    message_utils.runmain(self.updatekey())
+                                except:
+                                    message_utils.warning('unable to remove key')
+                            if msg.type == 'note_on' and msg.velocity != 0:
+                                if msg.channel != 9:
+                                    message_utils.runmain(
+                                        self.play_note(msg, inst[msg.channel], pan[msg.channel],
+                                                    channel_volume[msg.channel]))
+                                else:
+                                    message_utils.runmain(self.play_perc(
+                                        msg, pan[msg.channel], channel_volume[msg.channel]))
 
-                    elif msg.type == "program_change":
-                        inst[msg.channel] = msg.program
-                    elif msg.type == "control_change":
-                        if msg.control == 10:
-                            pan[msg.channel] = msg.value / 127 - 0.5
-                        elif msg.control == 7:
-                            channel_volume[msg.channel] = msg.value / 127
+                        elif msg.type == "program_change":
+                            inst[msg.channel] = msg.program
+                        elif msg.type == "control_change":
+                            if msg.control == 10:   # Pan
+                                if msg.value == 64:
+                                    pan[msg.channel] = 0
+                                else:
+                                    pan[msg.channel] = msg.value / 127 - 0.5
+                            elif msg.control == 7:  # Channel Volume
+                                channel_volume[msg.channel] = msg.value / 127
 
-                if self.isPlaying:
-                    if self.config['loop'] == 'song':
-                        continue
+                    if self.isPlaying:
+                        if self.config['loop'] == 'song':
+                            continue
+                        else:
+                            while True:
+                                self.index += 1
+                                try:
+                                    message_utils.runmain(
+                                        self.open(self.index, False))
+                                    break
+                                except:
+                                    message_utils.warning(
+                                        'unable to open file '+self.file_list[self.index])
+                                    continue
+                except:
+                    if self.config['loop'] != 'song':
+                        self.index += 1
+                        try:
+                            message_utils.runmain(
+                                self.open(self.index, False))
+                            break
+                        except:
+                            message_utils.warning(
+                                'unable to open file '+self.file_list[self.index])
+                            continue
                     else:
-                        while True:
-                            self.index += 1
-                            try:
-                                message_utils.runmain(self.open(self.index,False))
-                                break
-                            except:
-                                message_utils.warning('unable to open file '+self.file_list[self.index])
-                                continue
+                        self.isPlaying = False
             else:
                 time.sleep(0.05)
 

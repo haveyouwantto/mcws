@@ -106,6 +106,7 @@ def getPage(_list, page):
         'maxpage': maxpage
     }
 
+
 async def printEntries(ws, entries):
     if entries != None:
         try:
@@ -151,3 +152,10 @@ def toSI(n, bin=False):
 def filesize(filename):
     size = os.path.getsize(filename)
     return toSI(size, True) + 'B'
+
+
+def formatNumber(n):
+    if n == 0:
+        return ''
+    else:
+        return '{:.4n}'.format(n)

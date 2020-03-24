@@ -20,8 +20,9 @@ class Info(threading.Thread, BaseModule):
         self.lastUpdated = time.time() - 1
         self.speed = 0
 
-    def set_default_config(self):
-        self.config['history']= 0
+        self.default_config={
+            'history':0
+        }
 
     def run(self):
         self.root = tk.Tk()
