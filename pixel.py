@@ -323,14 +323,12 @@ class PixelGenerator(FileIOModule):
             for j in pxs[i]:
                 if j[2] == 0:
                     pos = self.get_position(position, size, j, True)
-                    await worldedit.setblock(self.ws,
-                                             pos,
+                    await self.we.setblock(pos,
                                              blockToPlace[0],
                                              int(blockToPlace[1]))
                 else:
                     pos = self.get_position(position, size, j, False)
-                    await worldedit.fill(self.ws,
-                                         pos[0],
+                    await self.we.fill(pos[0],
                                          pos[1],
                                          blockToPlace[0],
                                          int(blockToPlace[1]))

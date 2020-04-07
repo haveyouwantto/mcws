@@ -77,17 +77,6 @@ def generateCoorSequence(pos1, pos2):
                     )
         return out
 
-
-async def setblock(ws, pos, blockname, blockdata=0):
-    cmd = 'setblock {0} {1} {2}'.format(pos, blockname, blockdata)
-    await ws.send(message_utils.cmd(cmd))
-
-
-async def fill(ws, pos1, pos2, blockname, blockdata=0):
-    cmd = 'fill {0} {1} {2} {3}'.format(pos1, pos2, blockname, blockdata)
-    await ws.send(message_utils.cmd(cmd))
-
-
 # print(generateCoorSequence(Position(127,62,143),Position(-128,62,-112)))
 
 
@@ -135,15 +124,15 @@ class WorldEdit:
                 await self.ws.send(message_utils.error(ref_strings.worldedit.no_coordinate))
                 return
             if len(args) == 2:
-                result = await self.fill(args[1])
+                result = await self.fillAny(args[1])
             else:
-                result = await self.fill(args[1], args[2])
+                result = await self.fillAny(args[1], args[2])
             if result["success"]:
                 await self.ws.send(message_utils.info(result["data"]))
             else:
                 await self.ws.send(message_utils.error(result["data"]))
 
-    async def fill(self, blockname, blockdata=0):
+    async def fillAny(self, blockname, blockdata=0):
         sequence = generateCoorSequence(self.pos1, self.pos2)
         await self.ws.send(message_utils.cmd('closechat'))
         for i in sequence['sequence']:
@@ -180,3 +169,26 @@ class WorldEdit:
         y = msg["body"]["position"]["y"]
         z = msg["body"]["position"]["z"]
         return Position(x, y, z)
+
+    async def isBlock(self,pos, block):
+
+        await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block)))
+        data = await self.ws.recv()
+        msg = json.loads(data)
+        while msg.get('body').get('position') == None:
+            await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block)))
+            data = await self.ws.recv()
+            msg = json.loads(data)
+        return msg["body"]["matches"]
+
+    async def setblock(self,pos, blockname, blockdata=0):
+        cmd = 'setblock {0} {1} {2}'.format(pos, blockname, blockdata)
+        await self.ws.send(message_utils.cmd(cmd))
+
+    async def fill(self,pos1, pos2, blockname, blockdata=0):
+        cmd = 'fill {0} {1} {2} {3}'.format(pos1, pos2, blockname, blockdata)
+        await self.ws.send(message_utils.cmd(cmd))
+
+    async def copyBlock(self,source,destination):
+        cmd = 'clone {0} {0} {1}'.format(source, destination)
+        await self.ws.send(message_utils.cmd(cmd))

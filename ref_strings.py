@@ -80,6 +80,7 @@ class import_error:
     midiplayer = '缺少依赖库, midi模块启动失败'
     pixel = '缺少依赖库, 像素画模块启动失败'
     avatardownload = '缺少依赖库，将禁用头像下载功能'
+    perfinfo = '检测到headless，将禁用GUI'
 
 
 class pixel:

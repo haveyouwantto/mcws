@@ -31,11 +31,11 @@ inst_map = [
     ["note.guitar", 12],
     ["note.guitar", 12],
     ["note.pling", 0],
+    ["note.pling", 0],
     ["note.guitar", 12],
-    ["note.guitar", 12],
-    ["note.guitar", 12],
-    ["note.guitar", 12],
-    ["note.guitar", 12],
+    ["note.guitar", 0],
+    ["note.guitar", 0],
+    ["note.guitar", 0],
     # bass
     ["note.bass", 24],
     ["note.bass", 24],
@@ -143,5 +143,5 @@ inst_map = [
     ["random.orb", 0],
     ["", 0],
     ["mob.phantom.idle", 0],
-    ["random.explode", 0]
+    ["firework.blast", -12]
 ]

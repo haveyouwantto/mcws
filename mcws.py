@@ -14,10 +14,10 @@ import ref_strings
 import chat_logger
 import worldedit
 import mcws_module
-import perfinfo
 
 import_midiplayer = True
 import_pixel = True
+import_perfinfo=True
 try:
     import midiplayer
 except ModuleNotFoundError:
@@ -28,8 +28,29 @@ try:
 except ModuleNotFoundError:
     import_pixel = False
     print(ref_strings.import_error.pixel)
+    
+try:
+    import perfinfo
+except ModuleNotFoundError:
+    import_perfinfo = False
+    print(ref_strings.import_error.perfinfo)
 
 scoreRegex = r'((- )([\s\S]+?)(: )([-\d]+?)( \()([\s\S][^)]*?)(\)+?))'
+
+
+def generator(offset=0):
+    table = 'abcdefghijklmnopqrstuvwxyz'
+    i = offset
+    while True:
+        i2 = i
+        out = ''
+        while True:
+            out = table[i2 % 26 - 1] + out
+            i2 //= 26
+            if i2 <= 0:
+                break
+        yield out
+        i += 1
 
 
 async def hello(ws, path):
@@ -37,10 +58,6 @@ async def hello(ws, path):
     modules = []
     config = {}
     message_utils.log_command = False
-
-    perf = perfinfo.Info()
-    perf.start()
-    modules.append(perf)
 
     log = chat_logger.ChatLogger(ws)
     host = await log.getHost()
@@ -57,6 +74,11 @@ async def hello(ws, path):
     if import_pixel:
         pixlegen = pixel.PixelGenerator(ws, we)
         modules.append(pixlegen)
+
+    if import_perfinfo:
+        perf = perfinfo.Info()
+        perf.start()
+        modules.append(perf)
 
     if os.path.exists('config.json'):
         with open('config.json') as f:
@@ -80,19 +102,31 @@ async def hello(ws, path):
 
     print(config)
 
-    await ws.send(message_utils.info(ref_strings.loading))
+    # await ws.send(message_utils.info(ref_strings.loading))
 
     # 监听聊天信息
     await ws.send(message_utils.sub)
 
     sender = "外部"
 
-    await ws.send(message_utils.info(ref_strings.mcws.welcome))
+    # await ws.send(message_utils.info(ref_strings.mcws.welcome))
 
-    # await ws.send(message_utils.cmd("enableencryption \"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEfHXre8wewVRVY/cCpVP+Rz7ZJg/jxe+ITuhiMeHsr8QdGFzQrn9IU6c3qCdQbi4sf636uIXEwBsQGmgU/JbxO8ugbqMUFswWccPhqpdeCY2CihdHVOsCD1oC9s/hkEnl\" \"7JwjF0k1G1ATc3akeZvgIw==\""))
+    # await ws.send(message_utils.cmd("enableencryption \"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGUO0ZrWHa8kOSIjrrI8Rw8RhYXyM2adkeAyFLNenNEUK16CdJgMjyjxi+zG5hCXZJHmUqRqM4x927duzyzYER/Bdh9Uh9MbN9JX5BeL35IM5YV604nXVslQHXQ3YO1Fb\" \"ml2XwdbswuGmGLLfdd+8Zw==\""))
     # print(await ws.recv())
-    # data=await ws.recv()
-    # print(base64.b64encode(data))
+    # while True:
+    #    data=await ws.recv()
+    #    print(data)
+    def save():
+
+        for i in modules:
+            try:
+                config[i.module_id] = i.config
+            except:
+                pass
+        config['debug'] = message_utils.log_command
+        print(config)
+        with open('config.json', 'w') as f:
+            f.write(json.dumps(config))
     try:
         while True:
             data = await ws.recv()
@@ -152,6 +186,55 @@ async def hello(ws, path):
                             await ws.send(message_utils.info('bye!'))
                             raise KeyboardInterrupt
 
+                        if args[0] == '.crack':
+                            pass
+                            '''
+                            for i in range(100):
+                                cmd = next(a)
+                                print(cmd)
+                                await ws.send(message_utils.cmd(cmd))
+                                data = json.loads(await ws.recv())
+                                if data.get('body').get('statusCode') == 0 or data.get('header').get('messagePurpose') != "commandResponse":
+                                    found.append(cmd)
+                                    print(found)
+                                    continue
+                                if re.search(findreg, data.get('body').get('statusMessage')) == None:
+                                    found.append(cmd)
+                                    print(found)
+                                    continue
+
+                            offset += 100
+                            config['found'] = found
+                            config['offset'] = offset
+                            
+                            with open('config.json', 'w') as f:
+                                f.write(json.dumps(config))
+                            '''
+
+                        if args[0] == '.copy':
+                            origin = worldedit.Position(2, 71, 10)
+                            destination = worldedit.Position(-60, 4, -75)
+                            for i in range(100):
+                                isEnd = await we.isBlock(worldedit.Position(origin.x + i * 2, origin.y-1,
+                                                                            origin.z), 'command_block')
+                                if isEnd:
+                                    break
+                                for j in range(4):
+                                    for k in range(31):
+                                        detectPosition = worldedit.Position(origin.x + i * 2, origin.y + k,
+                                                                            origin.z + j * 2)
+                                        isBlock = await we.isBlock(detectPosition, 'command_block')
+                                        isBlock2 = await we.isBlock(detectPosition, 'chain_command_block')
+                                        if isBlock or isBlock2:
+                                            await we.copyBlock(detectPosition,
+                                                               worldedit.Position(destination.x - (j + i * 4),
+                                                                                  destination.y+k,destination.z))
+                                        else:
+                                            break
+
+                        if args[0] == '.save':
+                            save()
+
                     if args[0] == ".info":
                         await ws.send(message_utils.info(ref_strings.mcws.info))
                         await ws.send(message_utils.info(ref_strings.pyversion))
@@ -199,12 +282,7 @@ async def hello(ws, path):
             websockets.exceptions.ConnectionClosed):
         player.close()
         log.close()
-        for i in modules:
-            config[i.module_id] = i.config
-        config['debug'] = message_utils.log_command
-        print(config)
-        with open('config.json', 'w') as f:
-            f.write(json.dumps(config))
+        save()
         sys.exit()
 
 

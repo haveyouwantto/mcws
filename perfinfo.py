@@ -1,14 +1,13 @@
 import threading
 import time
 import message_utils
-import tkinter as tk
 import json
+import tkinter as tk
 
 from mcws_module import BaseModule
 
 import stats
 import fileutils
-
 
 class Info(threading.Thread, BaseModule):
     def __init__(self):
