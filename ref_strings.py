@@ -47,7 +47,7 @@ class midiplayer:
         '--play': '播放一个mid文件    \u00a7c--play <ID>',
         '--stop': '停止播放    \u00a7c--stop',
         '--playing': '显示正在播放的文件',
-        '--loop': '设置播放模式',
+        '--loop': '设置播放模式    \u00a7c--loop <song|all>',
         '--list': '列出mid文件    \u00a7c--list [页码]',
         '--search': '搜索mid文件    \u00a7c--search <内容>',
         '--reload': '重新加载mid文件列表    \u00a7c--reload',
@@ -77,8 +77,8 @@ class worldedit:
 
 
 class import_error:
-    midiplayer = '缺少依赖库, midi模块启动失败'
-    pixel = '缺少依赖库, 像素画模块启动失败'
+    midiplayer = '缺少依赖库, midi模块启动失败 (mido)'
+    pixel = '缺少依赖库, 像素画模块启动失败 (pillow)'
     avatardownload = '缺少依赖库，将禁用头像下载功能'
     perfinfo = '检测到headless，将禁用GUI'
 

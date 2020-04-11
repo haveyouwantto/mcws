@@ -254,6 +254,8 @@ class MidiPlayer(threading.Thread, FileIOModule):
                         else:
                             while True:
                                 self.index += 1
+                                if self.index > (len(self.file_list)-1):
+                                    self.index = 0
                                 try:
                                     message_utils.runmain(
                                         self.open(self.index, False))
