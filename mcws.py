@@ -77,9 +77,12 @@ async def hello(ws, path):
         modules.append(pixlegen)
 
     if import_perfinfo:
-        perf = perfinfo.Info()
-        perf.start()
-        modules.append(perf)
+        try:
+            perf = perfinfo.Info()
+            perf.start()
+            modules.append(perf)
+        except:
+            import_perfinfo = False
 
     if os.path.exists('config.json'):
         with open('config.json') as f:
