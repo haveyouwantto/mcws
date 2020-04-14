@@ -59,9 +59,9 @@ async def hello(ws, path):
     global import_midiplayer
     global import_perfinfo
     global import_pixel
-    
+
     modules = []
-    config = {}
+    config = {'stats':{}}
     message_utils.log_command = False
 
     log = chat_logger.ChatLogger(ws)
@@ -81,12 +81,9 @@ async def hello(ws, path):
         modules.append(pixlegen)
 
     if import_perfinfo:
-        try:
-            perf = perfinfo.Info()
-            perf.start()
-            modules.append(perf)
-        except:
-            import_perfinfo = False
+        perf = perfinfo.Info()
+        perf.start()
+        modules.append(perf)
 
     if os.path.exists('config.json'):
         with open('config.json') as f:
