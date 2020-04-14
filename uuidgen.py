@@ -1,11 +1,11 @@
-from threading import Lock
+import uuid
 
 id = 1
 
-lock = Lock()
-
-
 def gen():
+    return str(uuid.uuid1())
+
+'''def gen():
     global id
     global lock
     v0 = (id >> 96) & 0xffffffff
@@ -17,3 +17,4 @@ def gen():
     id += 1
     lock.release()
     return ('{0:08x}-{1:04x}-{2:04x}-{3:04x}-{4:012x}'.format(v0, v1, v2, v3, v4))
+'''
