@@ -50,6 +50,11 @@ colors = [
     ['stained_hardened_clay', 15, 0x251610]
 ]
 
+pal = [207, 213, 214, 224, 97, 0, 169, 48, 159, 35, 137, 198, 240, 175, 21, 94, 168, 24, 213, 101, 142, 54, 57, 61, 125,
+       125, 115, 21, 119, 136, 100, 31, 156, 44, 46, 143, 96, 59, 31, 73, 91, 36, 142, 32, 32, 8, 10, 15,
+       152, 94, 67, 209, 178, 161, 161, 83, 37, 149, 88, 108, 113, 108, 137, 186, 133, 35, 103, 117, 52, 161, 78, 78,
+       57, 42, 35, 135, 106, 97, 86, 91, 91, 118, 70, 86, 74, 59, 91, 77, 51, 35, 76, 83, 42, 143, 61, 46, 37, 22, 16]
+
 
 def RGBToHSV(rgb):
     r1 = rgb[0] / 255
@@ -127,12 +132,12 @@ def colorToBlock(color):
 
 class PixelGenerator(FileIOModule):
     def __init__(self, ws, we):
-        FileIOModule.__init__(self, ws, "images/", (".png", ".jpg", ".bmp"),'PixelGenerator')
+        FileIOModule.__init__(self, ws, "images/",
+                              (".png", ".jpg", ".bmp"), 'PixelGenerator')
         self.we = we
         self.mode = '+x+z'
         self.modes = ['+x+z', '+x-z', '-x+z',
                       '-x-z', '+x-y', '-x-y', '+z-y', '-z-y']
-        self.big = False
         self.commands['--list']['command'].description = ref_strings.pixel.help['--list']
         self.commands['--search']['command'].description = ref_strings.pixel.help['--search']
         self.commands['--reload']['command'].description = ref_strings.pixel.help['--reload']
@@ -142,7 +147,33 @@ class PixelGenerator(FileIOModule):
             Command('--mode', ('-m',), ref_strings.pixel.help['--mode']), self.set_mode)
         self.add_command(Command('--man-mode', ('-mm',),
                                  ref_strings.pixel.help['--man-mode']), self.man_mode)
-        self.add_command(Command('--from-url', ('-u',), ref_strings.pixel.help['--from-url']), self.from_url)
+        self.add_command(Command('--from-url', ('-u',),
+                                 ref_strings.pixel.help['--from-url']), self.from_url)
+        self.add_command(Command('--dither', ('-di',), 'dither'), self.set_dither)
+        self.add_command(Command('--big', ('-b',), 'big'), self.set_big)
+
+        self.default_config = {
+            'big': False,
+            'dither': False
+        }
+
+    async def set_big(self, args):
+        if len(args) > 0:
+            if args[0] == '0':
+                self.config['big'] = False
+            elif args[0] == '1':
+                self.config['big'] = True
+        else:
+            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
+
+    async def set_dither(self, args):
+        if len(args) > 0:
+            if args[0] == '0':
+                self.config['dither'] = False
+            elif args[0] == '1':
+                self.config['dither'] = True
+        else:
+            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
 
     async def from_url(self, args):
         pos = await self.we.getPlayerBlockPos()
@@ -236,14 +267,33 @@ class PixelGenerator(FileIOModule):
         img = Image.open(filename)
         size = img.size
 
-        await self.ws.send(message_utils.cmd('closechat'))
+        await self.ws.send(message_utils.autocmd('closechat'))
         await self.ws.send(message_utils.info(
             ref_strings.pixel.image_info.format(filename, size[0], size[1],
                                                 message_utils.filesize(filename))))
         max_width = 16 << 4
 
-        if self.big:
+        if (not self.config['big']) and size[0] > max_width:
+            ratio = size[0] / size[1]
+            resize = max_width, int(max_width / ratio)
+            img = img.resize(resize)
+            size = resize
+            await self.ws.send(message_utils.info(ref_strings.pixel.resize_info.format(size[0], size[1])))
+
+        if self.config['dither']:
+            try:
+                palimage = Image.new('P', (16, 16))
+                palimage.putpalette(pal * 7)
+                img = img.convert('RGB').quantize(palette=palimage)
+                img.save('cache/test.png', 'png')
+            except Exception as e:
+                print(e)
+                return
+
+        if self.config['big']:
             block_size = 128
+            work = 0
+            required = math.ceil(size[0] / block_size) * math.ceil(size[1] / block_size)
             await self.ws.send(message_utils.info('block size = {0}'.format(block_size)))
             for x in range(0, size[0], block_size):
                 for y in range(0, size[1], block_size):
@@ -260,17 +310,13 @@ class PixelGenerator(FileIOModule):
                     temppos = worldedit.Position(position.x + x, position.y,
                                                  position.z + y)
                     print(temppos)
-                    await self.ws.send(message_utils.cmd('tp @p ' + str(temppos)))
+                    await self.ws.send(message_utils.info('{0}/{1}'.format(work, required)))
+                    sleep(1)
+                    await self.ws.send(message_utils.autocmd('tp @p ' + str(temppos)))
                     await self.draw(tempimage, temppos)
-
+                    work += 1
+                    sleep(1)
             return
-
-        if size[0] > max_width:
-            ratio = size[0] / size[1]
-            resize = max_width, int(max_width / ratio)
-            img = img.resize(resize)
-            size = resize
-            await self.ws.send(message_utils.info(ref_strings.pixel.resize_info.format(size[0], size[1])))
 
         await self.draw(img, position)
 
@@ -287,7 +333,8 @@ class PixelGenerator(FileIOModule):
                 # PAL8 图片
                 if isinstance(px, int):
                     index = px * 3
-                    color = (pal[index] << 16) | (pal[index + 1] << 8) | pal[index + 2]
+                    color = (pal[index] << 16) | (
+                            pal[index + 1] << 8) | pal[index + 2]
 
                 # RGB 图片
                 elif len(px) == 3:
@@ -324,14 +371,14 @@ class PixelGenerator(FileIOModule):
                 if j[2] == 0:
                     pos = self.get_position(position, size, j, True)
                     await self.we.setblock(pos,
-                                             blockToPlace[0],
-                                             int(blockToPlace[1]))
+                                           blockToPlace[0],
+                                           int(blockToPlace[1]))
                 else:
                     pos = self.get_position(position, size, j, False)
                     await self.we.fill(pos[0],
-                                         pos[1],
-                                         blockToPlace[0],
-                                         int(blockToPlace[1]))
+                                       pos[1],
+                                       blockToPlace[0],
+                                       int(blockToPlace[1]))
 
                 sleep(0.002)
 

@@ -6,6 +6,7 @@ from colorama import Fore
 
 import ref_strings
 import stats
+import uuidgen
 
 log_command = False
 
@@ -14,7 +15,7 @@ sub = json.dumps({
         "eventName": "PlayerMessage"
     },
     "header": {
-        "requestId": "0ffae098-00ff-ffff-abbb-bbbbbbdf3344",
+        "requestId": "00000000-0000-0000-0000-000000000000",
         "messagePurpose": "subscribe",
         "version": 1,
         "messageType": "commandRequest"
@@ -22,10 +23,14 @@ sub = json.dumps({
 })
 
 
-def cmd(line, uuid="ffff0000-0000-0000-0000-000000000000"):
+def autocmd(line):
+    return cmd(line, uuidgen.gen())
+
+
+def cmd(line, uuid):
     if log_command:
         print(line)
-    stats.sent += 1
+    stats.commands += 1
     return json.dumps({
         "body": {
             "origin": {
@@ -52,18 +57,18 @@ def log(msg):
 
 
 def info(msg):
-    print(Fore.MAGENTA+msg)
-    return cmd("say \u00a7d" + str(msg))
+    print(Fore.MAGENTA + msg + Fore.WHITE)
+    return autocmd("say \u00a7d" + str(msg))
 
 
 def warning(msg):
-    print(Fore.YELLOW+msg)
-    return cmd("say \u00a7d" + str(msg))
+    print(Fore.YELLOW + msg + Fore.WHITE)
+    return autocmd("say \u00a7d" + str(msg))
 
 
 def error(msg):
-    print(Fore.RED+msg)
-    return cmd("say \u00a7c" + str(msg))
+    print(Fore.RED + msg + Fore.WHITE)
+    return autocmd("say \u00a7c" + str(msg))
 
 
 def drawKeyboard(key, start=0):
@@ -86,11 +91,11 @@ def midiDisplay(midimsg):
     out += drawKeyboard(128, midimsg.note + 1)
     i += 1
 
-    return cmd(out + '"}]}')
+    return autocmd(out + '"}]}')
 
 
 def setBlock(x, y, z, id, data=0):
-    return cmd("setblock {0} {1} {2} {3} {4}".format(x, y, z, id, data))
+    return autocmd("setblock {0} {1} {2} {3} {4}".format(x, y, z, id, data))
 
 
 def getPage(_list, page):

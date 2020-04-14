@@ -24,7 +24,7 @@ class EntityCounter(threading.Thread):
             self.update()
 
     async def update(self):
-        await self.ws.send(message_utils.cmd('testfor @e'))
+        await self.ws.send(message_utils.autocmd('testfor @e'))
         data = json.loads(await self.ws.recv())
         if not 'victim' in data['body']:
             self.time.append(

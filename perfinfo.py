@@ -16,12 +16,9 @@ class Info(threading.Thread, BaseModule):
         self.setDaemon(True)
 
         self.sent = 0
+        self.lastSent = stats.commands
         self.lastUpdated = time.time() - 1
         self.speed = 0
-
-        self.default_config={
-            'history':0
-        }
 
     def run(self):
         self.root = tk.Tk()
@@ -45,12 +42,11 @@ class Info(threading.Thread, BaseModule):
         self.root.mainloop()
 
     def update(self):
-        self.sent += stats.sent
-        self.config['history'] += stats.sent
+        self.sent = stats.commands - self.lastSent
         t = time.time()
         duration = t - self.lastUpdated
         self.lastUpdated = t
-        self.speed = stats.sent / duration
+        self.speed = self.sent / duration
+        self.lastSent = stats.commands
         self.string.set("{0} | {1}/s".format(message_utils.toSI(self.sent), message_utils.toSI(self.speed)))
         self.historystring.set("{0}".format(message_utils.toSI(self.config['history'])))
-        stats.sent = 0

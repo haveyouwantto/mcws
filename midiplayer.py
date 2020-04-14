@@ -184,7 +184,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
 
     async def playsound(self, selector, sound, pan, volume, pitch):
         await self.ws.send(
-            message_utils.cmd("execute {0} ~ ~ ~ playsound {1} @s ^{2} ^ ^ {3} {4}".format(
+            message_utils.autocmd("execute {0} ~ ~ ~ playsound {1} @s ^{2} ^ ^ {3} {4}".format(
                 selector,
                 sound,
                 message_utils.formatNumber(pan),
@@ -194,7 +194,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
         )
 
     async def updatekey(self):
-        await self.ws.send(message_utils.cmd('title {0} actionbar {1}'.format(self.selector, self.keyboard)))
+        await self.ws.send(message_utils.autocmd('title {0} actionbar {1}'.format(self.selector, self.keyboard)))
 
     def run(self):
         while True:

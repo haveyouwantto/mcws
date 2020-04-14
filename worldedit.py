@@ -4,6 +4,8 @@ import time
 import message_utils
 import ref_strings
 
+import uuidgen
+
 
 class Position:
     def __init__(self, x, y, z):
@@ -114,7 +116,7 @@ class WorldEdit:
                         )
                     )
                 )
-            await self.ws.send(message_utils.cmd('closechat'))
+            await self.ws.send(message_utils.autocmd('closechat'))
 
         if args[0] == ".fill":
             if (len(args) == 1 or args[1] == ''):
@@ -134,9 +136,9 @@ class WorldEdit:
 
     async def fillAny(self, blockname, blockdata=0):
         sequence = generateCoorSequence(self.pos1, self.pos2)
-        await self.ws.send(message_utils.cmd('closechat'))
+        await self.ws.send(message_utils.autocmd('closechat'))
         for i in sequence['sequence']:
-            await self.ws.send(message_utils.cmd("fill {0} {1} {2} {3}".format(i[0], i[1], blockname, blockdata)))
+            await self.ws.send(message_utils.autocmd("fill {0} {1} {2} {3}".format(i[0], i[1], blockname, blockdata)))
             time.sleep(0.01)
         return {
             "success": True,
@@ -144,11 +146,11 @@ class WorldEdit:
         }
 
     async def getPlayerPos(self):
-        await self.ws.send(message_utils.cmd('querytarget @s'))
+        await self.ws.send(message_utils.autocmd('querytarget @s'))
         data = await self.ws.recv()
         msg = json.loads(data)
         while msg.get('body').get('details') == None:
-            await self.ws.send(message_utils.cmd('querytarget @s'))
+            await self.ws.send(message_utils.autocmd('querytarget @s'))
             data = await self.ws.recv()
             msg = json.loads(data)
         detail = json.loads(msg.get('body').get('details'))[0]
@@ -158,11 +160,11 @@ class WorldEdit:
         return Position(x, y, z)
 
     async def getPlayerBlockPos(self):
-        await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
+        await self.ws.send(message_utils.autocmd('testforblock ~ ~ ~ air'))
         data = await self.ws.recv()
         msg = json.loads(data)
         while msg.get('body').get('position') == None:
-            await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air'))
+            await self.ws.send(message_utils.autocmd('testforblock ~ ~ ~ air'))
             data = await self.ws.recv()
             msg = json.loads(data)
         x = msg["body"]["position"]["x"]
@@ -171,24 +173,22 @@ class WorldEdit:
         return Position(x, y, z)
 
     async def isBlock(self,pos, block):
-
-        await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block)))
+        uuid = uuidgen.gen()
+        await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block),uuid))
         data = await self.ws.recv()
         msg = json.loads(data)
-        while msg.get('body').get('position') == None:
-            await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block)))
-            data = await self.ws.recv()
-            msg = json.loads(data)
+        while msg.get('header').get('requestId') != uuid:
+            continue
         return msg["body"]["matches"]
 
     async def setblock(self,pos, blockname, blockdata=0):
         cmd = 'setblock {0} {1} {2}'.format(pos, blockname, blockdata)
-        await self.ws.send(message_utils.cmd(cmd))
+        await self.ws.send(message_utils.autocmd(cmd))
 
     async def fill(self,pos1, pos2, blockname, blockdata=0):
         cmd = 'fill {0} {1} {2} {3}'.format(pos1, pos2, blockname, blockdata)
-        await self.ws.send(message_utils.cmd(cmd))
+        await self.ws.send(message_utils.autocmd(cmd))
 
     async def copyBlock(self,source,destination):
         cmd = 'clone {0} {0} {1}'.format(source, destination)
-        await self.ws.send(message_utils.cmd(cmd))
+        await self.ws.send(message_utils.autocmd(cmd))

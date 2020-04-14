@@ -14,6 +14,8 @@ import ref_strings
 import chat_logger
 import worldedit
 import mcws_module
+import uuidgen
+import stats
 
 import_midiplayer = True
 import_pixel = True
@@ -54,13 +56,12 @@ def generator(offset=0):
 
 
 async def hello(ws, path):
-    sent = 0
     modules = []
     config = {}
     message_utils.log_command = False
 
     log = chat_logger.ChatLogger(ws)
-    host = await log.getHost()
+    await log.getHost()
     modules.append(log)
 
     we = worldedit.WorldEdit(ws)
@@ -96,6 +97,8 @@ async def hello(ws, path):
                     module.config[i] = module.default_config[i]
 
         message_utils.log_command = config['debug']
+        stats.commands = config['stats']['commands']
+        uuidgen.id = config['stats']['commands']
     else:
         for module in modules:
             module.config = module.default_config
@@ -124,6 +127,7 @@ async def hello(ws, path):
             except:
                 pass
         config['debug'] = message_utils.log_command
+        config['stats']['commands'] = stats.commands
         print(config)
         with open('config.json', 'w') as f:
             f.write(json.dumps(config))
@@ -131,8 +135,6 @@ async def hello(ws, path):
         while True:
             data = await ws.recv()
             msg = json.loads(data)
-            sent += 1
-            sent = 0
             if msg["header"]["messagePurpose"] == "event":
 
                 if msg["body"]["eventName"] == "PlayerMessage" and msg["body"]["properties"]["Sender"] != sender and \
@@ -146,7 +148,7 @@ async def hello(ws, path):
 
                     executor = msg["body"]["properties"]["Sender"]
 
-                    if executor == host:
+                    if executor == log.host:
 
                         await we.parseCmd(args)
 
@@ -156,7 +158,7 @@ async def hello(ws, path):
                             c.start()'''
 
                         if args[0] == ".getscore":
-                            await ws.send(message_utils.cmd("scoreboard players list @s"))
+                            await ws.send(message_utils.autocmd("scoreboard players list @s"))
                             msg2 = json.loads(await ws.recv())
                             match = re.findall(scoreRegex, msg2.get(
                                 "body").get("statusMessage"))
@@ -252,7 +254,7 @@ async def hello(ws, path):
                             if os.path.exists("functions/" + arg1 + ".mcfunction"):
                                 with open("functions/" + arg1 + ".mcfunction", "r") as file:
                                     for i in file.readlines():
-                                        await ws.send(message_utils.cmd(i))
+                                        await ws.send(message_utils.autocmd(i))
                             else:
                                 await ws.send(message_utils.error(ref_strings.file_not_exists))
 

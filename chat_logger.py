@@ -33,7 +33,7 @@ class ChatLogger(BaseModule):
         }
 
     async def getHost(self):
-        await self.ws.send(message_utils.cmd('getlocalplayername'))
+        await self.ws.send(message_utils.autocmd('getlocalplayername'))
         msg = await self.ws.recv()
         self.host = json.loads(msg)['body']['localplayername']
         self.chatmsg = {
