@@ -21,25 +21,28 @@ class Info(threading.Thread, BaseModule):
         self.speed = 0
 
     def run(self):
-        self.root = tk.Tk()
-        self.root.geometry("128x36")
+        try:
+            self.root = tk.Tk()
+            self.root.geometry("128x36")
 
-        self.string = tk.StringVar()
-        self.string.set('-')
-        self.historystring = tk.StringVar()
-        self.historystring.set('-')
+            self.string = tk.StringVar()
+            self.string.set('-')
+            self.historystring = tk.StringVar()
+            self.historystring.set('-')
 
-        self.label = tk.Label(self.root, textvariable=self.string)
-        self.label.pack()
-        self.historylabel = tk.Label(self.root, textvariable=self.historystring)
-        self.historylabel.pack()
+            self.label = tk.Label(self.root, textvariable=self.string)
+            self.label.pack()
+            self.historylabel = tk.Label(self.root, textvariable=self.historystring)
+            self.historylabel.pack()
 
-        def my_mainloop():
-            self.update()
+            def my_mainloop():
+                self.update()
+                self.root.after(1000, my_mainloop)
+
             self.root.after(1000, my_mainloop)
-
-        self.root.after(1000, my_mainloop)
-        self.root.mainloop()
+            self.root.mainloop()
+        except:
+            return
 
     def update(self):
         self.sent = stats.commands - self.lastSent

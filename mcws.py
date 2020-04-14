@@ -19,7 +19,7 @@ import stats
 
 import_midiplayer = True
 import_pixel = True
-import_perfinfo=True
+import_perfinfo = True
 try:
     import midiplayer
 except ModuleNotFoundError:
@@ -56,6 +56,10 @@ def generator(offset=0):
 
 
 async def hello(ws, path):
+    global import_midiplayer
+    global import_perfinfo
+    global import_pixel
+    
     modules = []
     config = {}
     message_utils.log_command = False
