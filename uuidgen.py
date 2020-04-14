@@ -3,7 +3,7 @@ import uuid
 id = 1
 
 def gen():
-    return str(uuid.uuid1())
+    return str(uuid.uuid4())
 
 '''def gen():
     global id
