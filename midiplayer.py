@@ -230,13 +230,21 @@ class MidiPlayer(threading.Thread, FileIOModule):
                 self.isPlaying = True
                 try:
                     if self.mcsMode:
-
                         for note in self.mcs['notes']:
                             if (not self.playing) or self.isClosed:
                                 self.isPlaying = False
                                 break
+                            if self.config['displayKeyboard']:
+                                self.keyboard.add({
+                                    'note': note['pitch'],
+                                    'channel': note['inst']
+                                })
+                                
                             message_utils.runmain(self.play_inst(note['pitch'], insts[note['inst']], 100, 0))
-                            time.sleep(note['time'] * self.mcs['multiplier'] * 0.05)
+                            if note['time'] > 0:
+                                message_utils.runmain(self.updatekey())
+                                self.keyboard.reset()
+                                time.sleep(note['time'] * self.mcs['multiplier'] * 0.05)
 
                     else:
                         for msg in self.mid.play():
@@ -298,7 +306,8 @@ class MidiPlayer(threading.Thread, FileIOModule):
                                     message_utils.warning(
                                         'unable to open file ' + self.file_list[self.index])
                                     continue
-                except:
+                except Exception as e:
+                    print(e)
                     if self.config['loop'] != 'song':
                         self.index += 1
                         try:
