@@ -242,8 +242,9 @@ class MidiPlayer(threading.Thread, FileIOModule):
                                 
                             message_utils.runmain(self.play_inst(note['pitch'], insts[note['inst']], 100, 0))
                             if note['time'] > 0:
-                                message_utils.runmain(self.updatekey())
-                                self.keyboard.reset()
+                                if self.config['displayKeyboard']:
+                                    message_utils.runmain(self.updatekey())
+                                    self.keyboard.reset()
                                 time.sleep(note['time'] * self.mcs['multiplier'] * 0.05)
 
                     else:
