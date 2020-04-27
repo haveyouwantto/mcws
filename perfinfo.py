@@ -16,7 +16,7 @@ class Info(threading.Thread, BaseModule):
         self.setDaemon(True)
 
         self.sent = 0
-        self.lastSent = stats.commands
+        self.lastSent = 0
         self.lastUpdated = time.time() - 1
         self.speed = 0
 
@@ -27,13 +27,9 @@ class Info(threading.Thread, BaseModule):
 
             self.string = tk.StringVar()
             self.string.set('-')
-            self.historystring = tk.StringVar()
-            self.historystring.set('-')
 
             self.label = tk.Label(self.root, textvariable=self.string)
             self.label.pack()
-            self.historylabel = tk.Label(self.root, textvariable=self.historystring)
-            self.historylabel.pack()
 
             def my_mainloop():
                 self.update()
@@ -51,5 +47,4 @@ class Info(threading.Thread, BaseModule):
         self.lastUpdated = t
         self.speed = self.sent / duration
         self.lastSent = stats.commands
-        self.string.set("{0} | {1}/s".format(message_utils.toSI(self.sent), message_utils.toSI(self.speed)))
-        self.historystring.set("{0}".format(message_utils.toSI(self.config['history'])))
+        self.string.set("{0:08d} | {1}/s".format(stats.commands, message_utils.toSI(self.speed)))

@@ -18,8 +18,14 @@ def copyFolder(folder, dest):
 def getCleanName(file):
     return os.path.basename(file).split('.')[0]
 
+
 def removeExtension(file):
     return ".".join(getCleanName(file)[:-1])
+
+
+def getExtension(file):
+    l = os.path.basename(file).split('.')[0]
+    return l[len(l) - 1]
 
 
 def listFile(path, extensions):
@@ -27,6 +33,7 @@ def listFile(path, extensions):
     for i in extensions:
         out.extend(glob.glob(path + "**/*" + i, recursive=True))
     return out
+
 
 def mkdirs(path):
     if not os.path.exists(path):

@@ -146,11 +146,12 @@ class WorldEdit:
         }
 
     async def getPlayerPos(self):
-        await self.ws.send(message_utils.autocmd('querytarget @s'))
+        uuid = uuidgen.gen()
+        await self.ws.send(message_utils.cmd('querytarget @s',uuid))
         data = await self.ws.recv()
         msg = json.loads(data)
-        while msg.get('body').get('details') == None:
-            await self.ws.send(message_utils.autocmd('querytarget @s'))
+        while msg.get('header').get('requestId') != uuid:
+            await self.ws.send(message_utils.cmd('querytarget @s',uuid))
             data = await self.ws.recv()
             msg = json.loads(data)
         detail = json.loads(msg.get('body').get('details'))[0]
@@ -160,11 +161,12 @@ class WorldEdit:
         return Position(x, y, z)
 
     async def getPlayerBlockPos(self):
-        await self.ws.send(message_utils.autocmd('testforblock ~ ~ ~ air'))
+        uuid = uuidgen.gen()
+        await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air',uuid))
         data = await self.ws.recv()
         msg = json.loads(data)
-        while msg.get('body').get('position') == None:
-            await self.ws.send(message_utils.autocmd('testforblock ~ ~ ~ air'))
+        while msg.get('header').get('requestId') != uuid:
+            await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air',uuid))
             data = await self.ws.recv()
             msg = json.loads(data)
         x = msg["body"]["position"]["x"]
@@ -178,7 +180,9 @@ class WorldEdit:
         data = await self.ws.recv()
         msg = json.loads(data)
         while msg.get('header').get('requestId') != uuid:
-            continue
+            await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block),uuid))
+            data = await self.ws.recv()
+            msg = json.loads(data)
         return msg["body"]["matches"]
 
     async def setblock(self,pos, blockname, blockdata=0):
