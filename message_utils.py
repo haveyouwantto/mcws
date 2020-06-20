@@ -2,11 +2,10 @@ import json
 import math
 import os
 
-from colorama import Fore
-
 import ref_strings
 import stats
 import uuidgen
+import coloreplace
 
 log_command = False
 
@@ -53,21 +52,21 @@ def getChat(msg):
 
 
 def log(msg):
-    print(Fore.WHITE + msg)
+    print(coloreplace.replace(str(msg)))
 
 
 def info(msg):
-    print(Fore.MAGENTA + msg + Fore.WHITE)
+    print(coloreplace.replace("\u00a7d" + str(msg)))
     return autocmd("say \u00a7d" + str(msg))
 
 
 def warning(msg):
-    print(Fore.YELLOW + msg + Fore.WHITE)
-    return autocmd("say \u00a7d" + str(msg))
+    print(coloreplace.replace("\u00a7e" + str(msg)))
+    return autocmd("say \u00a7e" + str(msg))
 
 
 def error(msg):
-    print(Fore.RED + msg + Fore.WHITE)
+    print(coloreplace.replace("\u00a7c" + str(msg)))
     return autocmd("say \u00a7c" + str(msg))
 
 

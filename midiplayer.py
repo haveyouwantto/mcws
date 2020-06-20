@@ -32,6 +32,24 @@ insts = [
     'note.banjo',
     'note.pling'
 ]
+offsets = {
+    'note.harp': 0,
+    'note.bass': -2,
+    'note.bd': -2,
+    'note.snare': -2,
+    'note.hat': -2,
+    'note.guitar': -1,
+    'note.flute': +1,
+    'note.bell': +2,
+    'note.chime': +3,
+    'note.xylophone': +2,
+    'note.iron_xylophone': 0,
+    'note.cowbell': 0,
+    'note.didgeridoo': -2,
+    'note.bit': 0,
+    'note.banjo': 0,
+    'note.pling': 0
+}
 
 
 def isBlackKey(i):
@@ -230,22 +248,46 @@ class MidiPlayer(threading.Thread, FileIOModule):
                 self.isPlaying = True
                 try:
                     if self.mcsMode:
-                        for note in self.mcs['notes']:
-                            if (not self.playing) or self.isClosed:
-                                self.isPlaying = False
-                                break
-                            if self.config['displayKeyboard']:
-                                self.keyboard.add({
-                                    'note': note['pitch'],
-                                    'channel': note['inst']
-                                })
-                                
-                            message_utils.runmain(self.play_inst(note['pitch'], insts[note['inst']], 100, 0))
-                            if note['time'] > 0:
+                        if self.mcs['version'] == 0:
+                            for note in self.mcs['notes']:
+                                inst_name = insts[note['inst']]
+                                if (not self.playing) or self.isClosed:
+                                    self.isPlaying = False
+                                    break
                                 if self.config['displayKeyboard']:
-                                    message_utils.runmain(self.updatekey())
-                                    self.keyboard.reset()
-                                time.sleep(note['time'] * self.mcs['multiplier'] * 0.05)
+                                    self.keyboard.add({
+                                        'note': note['pitch']+offsets[inst_name]*12,
+                                        'channel': note['inst']
+                                    })
+
+                                message_utils.runmain(self.play_inst(
+                                    note['pitch'], inst_name, 100, 0))
+                                if note['time'] > 0:
+                                    if self.config['displayKeyboard']:
+                                        message_utils.runmain(self.updatekey())
+                                        self.keyboard.reset()
+                                    time.sleep(
+                                        note['time'] * self.mcs['multiplier'] * 0.05)
+                        elif self.mcs['version'] == 1:
+                            for note in self.mcs['notes']:
+                                inst_name = insts[note['inst']]
+                                if (not self.playing) or self.isClosed:
+                                    self.isPlaying = False
+                                    break
+                                if self.config['displayKeyboard']:
+                                    self.keyboard.add({
+                                        'note': note['pitch']+offsets[inst_name]*12,
+                                        'channel': note['inst']
+                                    })
+                                if note['time'] > 0:
+                                    if self.config['displayKeyboard']:
+                                        message_utils.runmain(self.updatekey())
+                                        self.keyboard.reset()
+                                    time.sleep(
+                                        note['time'] * self.mcs['multiplier'] * 0.05)
+
+                                message_utils.runmain(self.play_inst(
+                                    note['pitch'], inst_name, 100, 0))
 
                     else:
                         for msg in self.mid.play():
@@ -270,7 +312,8 @@ class MidiPlayer(threading.Thread, FileIOModule):
                                             })
                                         message_utils.runmain(self.updatekey())
                                     except:
-                                        message_utils.warning('unable to remove key')
+                                        message_utils.warning(
+                                            'unable to remove key')
                                 if msg.type == 'note_on' and msg.velocity != 0:
                                     if msg.channel != 9:
                                         message_utils.runmain(
