@@ -28,7 +28,7 @@ def autocmd(line):
 
 def cmd(line, uuid):
     if log_command:
-        print(line)
+        print(coloreplace.replace(line))
     stats.commands += 1
     return json.dumps({
         "body": {
