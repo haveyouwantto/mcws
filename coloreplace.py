@@ -1,22 +1,20 @@
-from colorama import Fore, init
-
 stylemap = [
-    ['0', Fore.BLACK],
-    ['1', Fore.BLUE],
-    ['2', Fore.GREEN],
-    ['3', Fore.LIGHTCYAN_EX],
-    ['4', Fore.RED],
-    ['5', Fore.MAGENTA],
-    ['6', Fore.YELLOW],
-    ['7', Fore.LIGHTWHITE_EX],
-    ['8', Fore.LIGHTBLACK_EX],
-    ['9', Fore.LIGHTCYAN_EX],
-    ['a', Fore.LIGHTGREEN_EX],
-    ['b', Fore.CYAN],
-    ['c', Fore.LIGHTRED_EX],
-    ['d', Fore.LIGHTMAGENTA_EX],
-    ['e', Fore.LIGHTYELLOW_EX],
-    ['f', Fore.WHITE],
+    ['0', '\033[0;30m'],
+    ['1', '\033[0;34m'],
+    ['2', '\033[0;32m'],
+    ['3', '\033[0;36m'],
+    ['4', '\033[0;31m'],
+    ['5', '\033[0;35m'],
+    ['6', '\033[0;33m'],
+    ['7', '\033[0;37m'],
+    ['8', '\033[1;30m'],
+    ['9', '\033[1;34m'],
+    ['a', '\033[1;32m'],
+    ['b', '\033[1;36m'],
+    ['c', '\033[1;31m'],
+    ['d', '\033[1;35m'],
+    ['e', '\033[1;33m'],
+    ['f', '\033[1;37m'],
     ['k', '\033[5m'],
     ['l', '\033[1m'],
     ['m', '\033[9m'],
@@ -24,9 +22,6 @@ stylemap = [
     ['o', '\033[3m'],
     ['r', '\033[0m']
 ]
-
-init(autoreset=True)
-
 
 def replace(text):
     for i in stylemap:
