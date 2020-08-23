@@ -9,6 +9,7 @@ import re
 import websockets
 
 from utils import message_utils, uuidgen
+from modules import chat_logger
 
 import worldedit
 from static import stats, ref_strings
@@ -17,12 +18,12 @@ import_midiplayer = True
 import_pixel = True
 import_perfinfo = True
 try:
-    from modules import midiplayer, pixel, chat_logger
+    from modules import midiplayer
 except ModuleNotFoundError:
     import_midiplayer = False
     print(ref_strings.import_error.midiplayer)
 try:
-    pass
+    from modules import pixel
 except ModuleNotFoundError:
     import_pixel = False
     print(ref_strings.import_error.pixel)
