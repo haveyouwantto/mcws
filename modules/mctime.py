@@ -1,5 +1,4 @@
-import time
-from mcws_module import BaseModule, Command
+from modules.__init__ import BaseModule, Command
 
 
 class MCTime(BaseModule):

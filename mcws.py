@@ -8,31 +8,27 @@ import re
 
 import websockets
 
-import message_utils
-import ref_strings
+from utils import message_utils, uuidgen
 
-import chat_logger
 import worldedit
-import mcws_module
-import uuidgen
-import stats
+from static import stats, ref_strings
 
 import_midiplayer = True
 import_pixel = True
 import_perfinfo = True
 try:
-    import midiplayer
+    from modules import midiplayer, pixel, chat_logger
 except ModuleNotFoundError:
     import_midiplayer = False
     print(ref_strings.import_error.midiplayer)
 try:
-    import pixel
+    pass
 except ModuleNotFoundError:
     import_pixel = False
     print(ref_strings.import_error.pixel)
     
 try:
-    import perfinfo
+    from user_interface import perfinfo
 except ModuleNotFoundError:
     import_perfinfo = False
     print(ref_strings.import_error.perfinfo)
@@ -85,8 +81,8 @@ async def hello(ws, path):
         perf.start()
         modules.append(perf)
 
-    if os.path.exists('config.json'):
-        with open('config.json') as f:
+    if os.path.exists('files/config.json'):
+        with open('files/config.json') as f:
             config = json.loads(f.read())
 
         for module in modules:
@@ -133,7 +129,7 @@ async def hello(ws, path):
         config['debug'] = message_utils.log_command
         config['stats']['commands'] = stats.commands
         print(config)
-        with open('config.json', 'w') as f:
+        with open('files/config.json', 'w') as f:
             f.write(json.dumps(config))
     try:
         while True:
@@ -252,7 +248,7 @@ async def hello(ws, path):
                     if args[0] == ".function":
                         arg1 = raw[10:]
                         if arg1 == "-ls":
-                            for filename in glob.glob("functions/*.mcfunction"):
+                            for filename in glob.glob("files/functions/*.mcfunction"):
                                 await ws.send(message_utils.info(filename))
                         else:
                             if os.path.exists("functions/" + arg1 + ".mcfunction"):

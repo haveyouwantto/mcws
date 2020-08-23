@@ -16,7 +16,7 @@ def copyFolder(folder, dest):
 
 
 def getCleanName(file):
-    return os.path.basename(file).split('.')[0]
+    return os.path.basename(file).split('.')[0:-1]
 
 
 def removeExtension(file):

@@ -20,4 +20,4 @@ def gen():
     v4 = id & 0xffffffffffff
     id += 1
     lock.release()
-    return ('{0:08x}-{1:04x}-{2:04x}-{3:04x}-{4:012x}'.format(v0, v1, v2, v3, v4))
+    return '{0:08x}-{1:04x}-{2:04x}-{3:04x}-{4:012x}'.format(v0, v1, v2, v3, v4)

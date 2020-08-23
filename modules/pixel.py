@@ -4,10 +4,9 @@ import math
 from PIL import Image
 
 import worldedit
-import message_utils
-import ref_strings
-from mcws_module import Command, FileIOModule
-import downloader
+from static import ref_strings
+from modules.__init__ import Command, FileIOModule
+from utils import downloader, message_utils
 
 # 以下为从 code connection 里复制的代码，原为js
 # 进行了一些修改
@@ -80,7 +79,7 @@ def RGBToHSV(rgb):
 
     v = cmax
 
-    return (h, s, v)
+    return h, s, v
 
 
 def ColourDistance(rgb_1, rgb_2):
@@ -121,7 +120,7 @@ def colorToBlock(color):
                 rgb, (((c[2] >> 16) & 0xff), ((c[2] >> 8) & 0xff), (c[2] & 0xff)))
 
             # 如果色差比之前的更小
-            if (i < 0 or dc < best):
+            if i < 0 or dc < best:
                 i = j
                 best = dc
 
@@ -132,7 +131,7 @@ def colorToBlock(color):
 
 class PixelGenerator(FileIOModule):
     def __init__(self, ws, we):
-        FileIOModule.__init__(self, ws, "images/",
+        FileIOModule.__init__(self, ws, "files/images/",
                               (".png", ".jpg", ".bmp"), 'PixelGenerator')
         self.we = we
         self.mode = '+x+z'
@@ -187,7 +186,7 @@ class PixelGenerator(FileIOModule):
         if code[0] == 1:
             await self.ws.send(message_utils.error(ref_strings.pixel.mime_error.format(code[1])))
             return
-        await self.generate('cache/img', pos)
+        await self.generate('files/cache/img', pos)
 
     async def man_mode(self, args):
         for i in ref_strings.pixel.mode_help:
@@ -245,7 +244,7 @@ class PixelGenerator(FileIOModule):
             else:  # -z-y
                 pos2 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
                                           position.z - imagepos[0] - imagepos[2])
-            return (pos1, pos2)
+            return pos1, pos2
         else:
             return pos1
 
@@ -270,7 +269,7 @@ class PixelGenerator(FileIOModule):
         await self.ws.send(message_utils.autocmd('closechat'))
         await self.ws.send(message_utils.info(
             ref_strings.pixel.image_info.format(filename, size[0], size[1],
-                                                message_utils.filesize(filename))))
+                                                message_utils.fileSize(filename))))
         max_width = 16 << 4
 
         if (not self.config['big']) and size[0] > max_width:

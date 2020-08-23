@@ -1,6 +1,5 @@
-import ref_strings
-import message_utils
-import fileutils
+from static import ref_strings
+from utils import fileutils, message_utils
 
 import os
 import traceback
@@ -29,9 +28,9 @@ class BaseModule:
         self.description = description
         self.add_command(Command('--help', ('-h', '-?', 'help'), ref_strings.module.help['--help']), self.help)
         self.add_command(Command('--info', ('-i', 'info'), ref_strings.module.help['--info']), self.info)
-        self.add_command(Command('--list-config',('-lc',),ref_strings.module.help['--list-config']),self.list_config)
+        self.add_command(Command('--list-config', ('-lc',), ref_strings.module.help['--list-config']), self.list_config)
         self.config = {}
-        self.default_config={}
+        self.default_config = {}
 
     async def help(self, args):
         await self.ws.send(message_utils.info('{0} - {1}'.format(self.module_name, self.description)))
@@ -84,7 +83,8 @@ class FileIOModule(BaseModule):
         self.add_command(Command('--search', ('-s', 'search'), ref_strings.module.help['--search']), self.search_file)
         self.add_command(Command('--list', ('-ls', 'list'), ref_strings.module.help['--list']), self.list_file)
         self.add_command(Command('--reload', ('-re', 'reload'), ref_strings.module.help['--reload']), self.reload)
-        self.add_command(Command('--list-by-id', ('-lsi',),ref_strings.module.help['--list-by-id']), self.list_file_by_id)
+        self.add_command(Command('--list-by-id', ('-lsi',), ref_strings.module.help['--list-by-id']),
+                         self.list_file_by_id)
         self.get_file_list()
 
     def get_file_list(self):
@@ -131,6 +131,8 @@ class FileIOModule(BaseModule):
                 await self.ws.send(message_utils.error(ref_strings.file_not_exists))
         except ValueError:
             await self.ws.send(message_utils.error(ref_strings.invaild_id))
+        except Exception as e:
+            await self.ws.send(message_utils.error("Unexpected exception" + str(e)))
 
     async def open(self, index):
         pass

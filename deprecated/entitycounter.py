@@ -4,7 +4,7 @@ import time
 
 import matplotlib.pyplot as plt
 
-import message_utils
+from utils import message_utils
 
 
 class EntityCounter(threading.Thread):

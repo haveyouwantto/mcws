@@ -1,10 +1,8 @@
 import json
 import time
 
-import message_utils
-import ref_strings
-
-import uuidgen
+from utils import message_utils, uuidgen
+from static import ref_strings
 
 
 class Position:
@@ -147,11 +145,11 @@ class WorldEdit:
 
     async def getPlayerPos(self):
         uuid = uuidgen.gen()
-        await self.ws.send(message_utils.cmd('querytarget @s',uuid))
+        await self.ws.send(message_utils.cmd('querytarget @s', uuid))
         data = await self.ws.recv()
         msg = json.loads(data)
         while msg.get('header').get('requestId') != uuid:
-            await self.ws.send(message_utils.cmd('querytarget @s',uuid))
+            await self.ws.send(message_utils.cmd('querytarget @s', uuid))
             data = await self.ws.recv()
             msg = json.loads(data)
         detail = json.loads(msg.get('body').get('details'))[0]
@@ -162,11 +160,11 @@ class WorldEdit:
 
     async def getPlayerBlockPos(self):
         uuid = uuidgen.gen()
-        await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air',uuid))
+        await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air', uuid))
         data = await self.ws.recv()
         msg = json.loads(data)
         while msg.get('header').get('requestId') != uuid:
-            await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air',uuid))
+            await self.ws.send(message_utils.cmd('testforblock ~ ~ ~ air', uuid))
             data = await self.ws.recv()
             msg = json.loads(data)
         x = msg["body"]["position"]["x"]
@@ -176,11 +174,11 @@ class WorldEdit:
 
     async def isBlock(self,pos, block):
         uuid = uuidgen.gen()
-        await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block),uuid))
+        await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block), uuid))
         data = await self.ws.recv()
         msg = json.loads(data)
         while msg.get('header').get('requestId') != uuid:
-            await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block),uuid))
+            await self.ws.send(message_utils.cmd('testforblock {0} {1}'.format(pos, block), uuid))
             data = await self.ws.recv()
             msg = json.loads(data)
         return msg["body"]["matches"]

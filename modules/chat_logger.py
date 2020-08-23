@@ -4,15 +4,14 @@ import os
 import shutil
 import time
 
-import fileutils
-import message_utils
-import ref_strings
+from utils import fileutils, message_utils
+from static import ref_strings
 
-from mcws_module import BaseModule
+from modules.__init__ import BaseModule
 
 import_avatar = True
 try:
-    import avatardownload as avatar
+    from deprecated import avatardownload as avatar
 except ImportError:
     import_avatar = False
     print(ref_strings.import_error.avatardownload)
@@ -25,7 +24,7 @@ class ChatLogger(BaseModule):
         BaseModule.__init__(self, ws)
         self.players = []
         self.history_players = []
-        for i in glob.glob('cache/avatar/*.png'):
+        for i in glob.glob('files/cache/avatar/*.png'):
             self.history_players.append(fileutils.getCleanName(i))
         self.config = {}
         self.default_config = {
@@ -81,18 +80,18 @@ class ChatLogger(BaseModule):
             localTime = time.localtime(float(self.chatmsg['time']))
             date = time.strftime('%Y-%m-%d_%H-%M-%S', localTime)
 
-            out = 'chat_logs/' + date + '/'
+            out = os.path.join('files/chat_logs/', date)
 
             if not os.path.exists(out):
                 os.makedirs(out)
                 os.makedirs(os.path.join(out, 'avatar/'))
 
-            for file in os.listdir('template/'):
+            for file in os.listdir('../files/template/'):
                 shutil.copyfile('template/' + file, out + file)
 
             for name in self.players:
                 try:
-                    shutil.copyfile('cache/avatar/' + name + '.png',
+                    shutil.copyfile('files/cache/avatar/' + name + '.png',
                                 os.path.join(out, 'avatar/', name + '.png'))
                 except:
                     message_utils.warning('player ' + name + ' not found')

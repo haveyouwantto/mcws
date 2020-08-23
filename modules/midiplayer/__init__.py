@@ -3,14 +3,12 @@ import threading
 import time
 
 import mido
+import numpy as np
 
-import drum_set
-import instruments_map
-import message_utils
-import ref_strings
-from mcws_module import Command, FileIOModule
-import downloader
-import mcsparser
+from modules.midiplayer import instruments_map, drum_set, mcsparser
+from static import ref_strings
+from modules.__init__ import Command, FileIOModule
+from utils import downloader, message_utils
 
 palette = 'ca1edb62574398ff'
 
@@ -53,7 +51,7 @@ offsets = {
 
 
 def isBlackKey(i):
-    if (i % 12 == 1 or i % 12 == 3 or i % 12 == 6 or i % 12 == 8 or i % 12 == 10):
+    if i % 12 == 1 or i % 12 == 3 or i % 12 == 6 or i % 12 == 8 or i % 12 == 10:
         return True
     else:
         return False
@@ -61,11 +59,11 @@ def isBlackKey(i):
 
 class KeyBoard:
     def __init__(self):
+        self.keys = []
         self.colorMode = 0
         self.reset()
 
     def reset(self):
-        self.keys = []
         for i in range(128):
             self.keys.append([])
 
@@ -78,7 +76,7 @@ class KeyBoard:
     def __str__(self):
         out = '\u00a70'
         for i in range(128):
-            if self.keys[i] != []:
+            if self.keys[i]:
                 for j in self.keys[i]:
                     out += '\u00a7' + palette[j['channel']]
             """
@@ -89,7 +87,7 @@ class KeyBoard:
                     out+='\u00a7f'
             """
             out += '\u258F'
-            if self.keys[i] != []:
+            if self.keys[i]:
                 out += '\u00a70'
         return out
 
@@ -98,7 +96,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
 
     def __init__(self, ws):
         threading.Thread.__init__(self)
-        FileIOModule.__init__(self, ws, 'midis/', ('.mid', '.midi', '.mcs', '.mcz'), ref_strings.midiplayer.name,
+        FileIOModule.__init__(self, ws, 'files/midis/', ('.mid', '.midi', '.mcs', '.mcz'), ref_strings.midiplayer.name,
                               ref_strings.midiplayer.description)
         self.playing = False
         self.mid = None
@@ -177,7 +175,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
         if code[0] == 1:
             await self.ws.send(message_utils.error(ref_strings.pixel.mime_error.format(code[1])))
             return
-        await self.open('cache/midi')
+        await self.open('files/cache/midi')
 
     async def show_playing(self, args):
         if self.playing:
@@ -241,10 +239,9 @@ class MidiPlayer(threading.Thread, FileIOModule):
     def run(self):
         while True:
             if self.playing:
-                inst = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                pan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                channel_volume = [1, 1, 1, 1, 1, 1,
-                                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                inst = np.zeros(16, dtype='uint8')
+                pan = np.zeros(16, dtype='uint8')
+                channel_volume = np.ones(16)
                 self.isPlaying = True
                 try:
                     if self.mcsMode:
@@ -256,7 +253,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
                                     break
                                 if self.config['displayKeyboard']:
                                     self.keyboard.add({
-                                        'note': note['pitch']+offsets[inst_name]*12,
+                                        'note': note['pitch'] + offsets[inst_name] * 12,
                                         'channel': note['inst']
                                     })
 
@@ -276,7 +273,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
                                     break
                                 if self.config['displayKeyboard']:
                                     self.keyboard.add({
-                                        'note': note['pitch']+offsets[inst_name]*12,
+                                        'note': note['pitch'] + offsets[inst_name] * 12,
                                         'channel': note['inst']
                                     })
                                 if note['time'] > 0:
@@ -376,7 +373,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
         filename = self.file_list[index]
         await self.ws.send(
             message_utils.info(
-                ref_strings.midiplayer.load_song.format(self.index, filename, message_utils.filesize(filename))))
+                ref_strings.midiplayer.load_song.format(self.index, filename, message_utils.fileSize(filename))))
         if filename.endswith('.mcs') or filename.endswith('.mcz'):
             self.mcsMode = True
             self.mcs = mcsparser.read(filename)

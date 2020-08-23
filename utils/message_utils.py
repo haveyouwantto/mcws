@@ -2,10 +2,9 @@ import json
 import math
 import os
 
-import ref_strings
-import stats
-import uuidgen
-import coloreplace
+from static import stats, ref_strings
+from utils import uuidgen
+from user_interface import coloreplace
 
 log_command = False
 
@@ -74,7 +73,7 @@ def drawKeyboard(key, start=0):
     out = ""
     i = start
     while i < key:
-        if (i % 12 == 1 or i % 12 == 3 or i % 12 == 6 or i % 12 == 8 or i % 12 == 10):
+        if i % 12 == 1 or i % 12 == 3 or i % 12 == 6 or i % 12 == 8 or i % 12 == 10:
             out += "\u00a70\u258F"
         else:
             out += "\u00a7f\u258F"
@@ -93,8 +92,8 @@ def midiDisplay(midimsg):
     return autocmd(out + '"}]}')
 
 
-def setBlock(x, y, z, id, data=0):
-    return autocmd("setblock {0} {1} {2} {3} {4}".format(x, y, z, id, data))
+def setBlock(x, y, z, _id, data=0):
+    return autocmd("setblock {0} {1} {2} {3} {4}".format(x, y, z, _id, data))
 
 
 def getPage(_list, page):
@@ -112,7 +111,7 @@ def getPage(_list, page):
 
 
 async def printEntries(ws, entries):
-    if entries != None:
+    if entries is not None:
         try:
             start = entries['start']
             for i in range(10):
@@ -136,16 +135,16 @@ def runmain(coroutine):
 suffix = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
 
-def toSI(n, bin=False):
+def toSI(n, binaryMode=False):
     if n < 1000:
         return "{0:.3g}".format(n)
-    if bin:
+    if binaryMode:
         k = 1024
     else:
         k = 1000
     for i in suffix:
         if n < k:
-            if bin:
+            if binaryMode:
                 return "{0:.3g} {1}i".format(n, i)
             else:
                 return "{0:.3g} {1}".format(n, i)
@@ -153,7 +152,7 @@ def toSI(n, bin=False):
         n /= k
 
 
-def filesize(filename):
+def fileSize(filename):
     size = os.path.getsize(filename)
     return toSI(size, True) + 'B'
 

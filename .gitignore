@@ -1,20 +1,26 @@
-midis/*
-functions/*
-images/*
+
 .*/
 bin/
 __pycache__/
-cache/*
-chat_logs/*
-stats/
-log.txt
-login.txt
-test.py
-note.txt
-b.recv
-sim.js
-ops.json
 *.spec
+
+# Build files
+
 dist/
 build/
-config.json
+
+# Debug files
+
+debug/test.py
+debug/note.txt
+debug/sim.js
+
+# Resource Files
+
+files/config.json
+files/midis/*
+files/functions/*
+files/images/*
+files/cache/*
+files/chat_logs/*
+files/login.txt
