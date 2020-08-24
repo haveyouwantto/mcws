@@ -3,4 +3,3 @@ websockets==8.0.2
 mido==1.2.9
 pillow~=7.2.0
 numpy~=1.19.1
-matplotlib~=3.3.1

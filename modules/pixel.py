@@ -129,7 +129,7 @@ def colorToBlock(color):
 
 # 以上
 
-class PixelGenerator(FileIOModule):
+class PixelArtGenerator(FileIOModule):
     def __init__(self, ws, we):
         FileIOModule.__init__(self, ws, "files/images/",
                               (".png", ".jpg", ".bmp"), 'PixelGenerator')
