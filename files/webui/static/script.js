@@ -16,7 +16,8 @@ function get(url, callback) {
 
 function parse(response) {
   let data = JSON.parse(response.responseText);
-  _("#commands").innerText = data["stats"]["commands"];
+  _("#commands").innerText = data["config"]["stats"]["commands"];
+  console.log(new Date(data.time*1000));
 }
 
-setInterval(get, 1000, 'http://127.0.0.1:26363/ajax', parse);
+setInterval(get, 1000, 'ajax', parse);

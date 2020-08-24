@@ -15,6 +15,8 @@ invaild_id = 'ID 无效'
 list_format = '[§c{0}§d] - {1}'
 pagenum_format = '第 {0} 页，共 {1} 页'
 
+webui = 'WebUI已启用，http://127.0.0.1:26363'
+
 
 class module:
     reload = '文件列表已重新加载'
@@ -80,7 +82,7 @@ class import_error:
     midiplayer = '缺少依赖库, midi模块启动失败 (mido)'
     pixel = '缺少依赖库, 像素画模块启动失败 (pillow)'
     avatardownload = '缺少依赖库，将禁用头像下载功能'
-    perfinfo = '检测到headless，将禁用GUI'
+    webui = '缺少依赖库，将禁用WebUI'
 
 
 class pixel:

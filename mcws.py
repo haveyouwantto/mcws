@@ -36,7 +36,7 @@ try:
     from user_interface import webui
 except ModuleNotFoundError:
     import_webui = False
-    print("webui import failed")
+    print(ref_strings.import_error.webui)
 
 
 class MCWS:
@@ -76,6 +76,7 @@ class MCWS:
 
             webui.wsserver = self
             _thread.start_new_thread(s, ())
+            print(ref_strings.webui)
 
     async def load_config(self):
         if os.path.exists('files/config.json'):

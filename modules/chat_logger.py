@@ -86,8 +86,8 @@ class ChatLogger(BaseModule):
                 os.makedirs(out)
                 os.makedirs(os.path.join(out, 'avatar/'))
 
-            for file in os.listdir('../files/template/'):
-                shutil.copyfile('template/' + file, out + file)
+            for file in os.listdir('files/template/'):
+                shutil.copyfile('files/template/' + file, out + file)
 
             for name in self.players:
                 try:
