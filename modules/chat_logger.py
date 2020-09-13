@@ -87,12 +87,12 @@ class ChatLogger(BaseModule):
                 os.makedirs(os.path.join(out, 'avatar/'))
 
             for file in os.listdir('files/template/'):
-                shutil.copyfile('files/template/' + file, out + file)
+                shutil.copyfile('files/template/' + file, os.path.join(out, file))
 
             for name in self.players:
                 try:
                     shutil.copyfile('files/cache/avatar/' + name + '.png',
-                                os.path.join(out, 'avatar/', name + '.png'))
+                                    os.path.join(out, 'avatar/', name + '.png'))
                 except:
                     message_utils.warning('player ' + name + ' not found')
 

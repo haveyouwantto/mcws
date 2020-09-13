@@ -132,7 +132,7 @@ def colorToBlock(color):
 class PixelArtGenerator(FileIOModule):
     def __init__(self, ws, we):
         FileIOModule.__init__(self, ws, "files/images/",
-                              (".png", ".jpg", ".bmp"), 'PixelGenerator')
+                              (".png", ".jpg", ".bmp"), 'PixelGenerator','Generate pixel art in real time')
         self.we = we
         self.mode = '+x+z'
         self.modes = ['+x+z', '+x-z', '-x+z',
@@ -189,10 +189,8 @@ class PixelArtGenerator(FileIOModule):
         await self.generate('files/cache/img', pos)
 
     async def man_mode(self, args):
-        for i in ref_strings.pixel.mode_help:
-            await self.ws.send(message_utils.info(i))
-        for i in self.modes:
-            await self.ws.send(message_utils.info(i))
+        await self.ws.send(message_utils.info("\n".join(ref_strings.pixel.mode_help)))
+        await self.ws.send(message_utils.info("\n".join(self.modes)))
 
     def get_position(self, position, imagesize, imagepos, setblock):
         if self.mode == '+x+z':

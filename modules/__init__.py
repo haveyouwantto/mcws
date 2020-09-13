@@ -4,6 +4,7 @@ from utils import fileutils, message_utils
 import os
 import traceback
 import sys
+from json import dumps
 
 
 class Command:
@@ -26,16 +27,20 @@ class BaseModule:
         self.module_id = self.__class__.__name__
         self.module_name = name
         self.description = description
-        self.add_command(Command('--help', ('-h', '-?', 'help'), ref_strings.module.help['--help']), self.help)
-        self.add_command(Command('--info', ('-i', 'info'), ref_strings.module.help['--info']), self.info)
-        self.add_command(Command('--list-config', ('-lc',), ref_strings.module.help['--list-config']), self.list_config)
+        self.add_command(Command('--help', ('-h', '-?', 'help'),
+                                 ref_strings.module.help['--help']), self.help)
+        self.add_command(Command('--info', ('-i', 'info'),
+                                 ref_strings.module.help['--info']), self.info)
+        self.add_command(Command('--print-data', ('-pd',),
+                                 ref_strings.module.help['--list-config']), self.print_data)
         self.config = {}
         self.default_config = {}
 
     async def help(self, args):
-        await self.ws.send(message_utils.info('{0} - {1}'.format(self.module_name, self.description)))
+        string = '\n' + '{0} - {1}'.format(self.module_name, self.description)+'\n'
         for i in self.commands:
-            await self.ws.send(message_utils.info(str(self.commands[i]["command"])))
+            string += str(self.commands[i]["command"])+'\n\u00a7d'
+        await self.ws.send(message_utils.info(string))
 
     async def info(self, args):
         pass
@@ -48,9 +53,6 @@ class BaseModule:
 
     async def no_command(self):
         pass
-
-    async def list_config(self, args):
-        await self.ws.send(message_utils.info('{0}: {1}'.format(self.module_name, self.config)))
 
     async def parse_command(self, args):
         try:
@@ -73,6 +75,17 @@ class BaseModule:
     def set_config(self, config):
         self.config = config
 
+    def get_data(self):
+        return {
+            'id': self.module_id,
+            'name': self.module_name,
+            'description': self.description,
+            'config': self.config
+        }
+
+    async def print_data(self, args):
+        await self.ws.send(message_utils.info(dumps(self.get_data(), indent=4)))
+
 
 class FileIOModule(BaseModule):
     def __init__(self, ws, path, extensions, name='', description='', ):
@@ -80,9 +93,12 @@ class FileIOModule(BaseModule):
         self.path = path
         self.extensions = extensions
         self.index = 0
-        self.add_command(Command('--search', ('-s', 'search'), ref_strings.module.help['--search']), self.search_file)
-        self.add_command(Command('--list', ('-ls', 'list'), ref_strings.module.help['--list']), self.list_file)
-        self.add_command(Command('--reload', ('-re', 'reload'), ref_strings.module.help['--reload']), self.reload)
+        self.add_command(Command('--search', ('-s', 'search'),
+                                 ref_strings.module.help['--search']), self.search_file)
+        self.add_command(Command('--list', ('-ls', 'list'),
+                                 ref_strings.module.help['--list']), self.list_file)
+        self.add_command(Command('--reload', ('-re', 'reload'),
+                                 ref_strings.module.help['--reload']), self.reload)
         self.add_command(Command('--list-by-id', ('-lsi',), ref_strings.module.help['--list-by-id']),
                          self.list_file_by_id)
         self.get_file_list()
@@ -112,9 +128,11 @@ class FileIOModule(BaseModule):
         if len(results) == 0:
             await self.ws.send(message_utils.info(ref_strings.empty_result))
         else:
+            string = '\n'
             for i in results:
-                await self.ws.send(
-                    message_utils.info(ref_strings.list_format.format(i[0], i[1])))
+                string += ref_strings.list_format.format(i[0], i[1])+'\n'
+            await self.ws.send(
+                message_utils.info(string))
 
     async def open_file(self, args):
         if len(args) == 0:

@@ -44,7 +44,7 @@ class MCWS:
     async def start(self, ws, path):
         self.ws = ws
         self.modules = {}
-        self.config = {'stats': {},'modules':{}}
+        self.config = {'stats': {}, 'modules': {}}
         message_utils.log_command = False
 
         await self.load_modules()
@@ -72,7 +72,7 @@ class MCWS:
 
         if import_webui:
             def s():
-                webui.app.run(port=26363, threaded=True)
+                webui.app.run(host='0.0.0.0', port=26363, threaded=True)
 
             webui.wsserver = self
             _thread.start_new_thread(s, ())
@@ -97,7 +97,7 @@ class MCWS:
 
             message_utils.log_command = self.config['debug']
             stats.commands = self.config['stats']['commands']
-            uuidgen.id = self.config['stats']['commands']
+            uuidgen._id = self.config['stats']['commands']
         else:
             for module in self.modules:
                 module.config = module.default_config
@@ -107,7 +107,6 @@ class MCWS:
     async def listen_event(self):
         # 监听聊天信息
         await self.ws.send(message_utils.sub)
-        self.sender = "外部"  # TODO detect ws name
 
     def get_config(self):
         for k in self.modules:
@@ -120,176 +119,159 @@ class MCWS:
         self.config['stats']['commands'] = stats.commands
         return self.config
 
+    def get_data(self):
+        data = {
+            'debug': message_utils.log_command,
+            'commands': stats.commands,
+            'modules': {}
+        }
+        for k in self.modules:
+            module = self.modules[k]
+            data['modules'][module.module_id] = module.get_data()
+        return data
+
     def save(self):
         self.get_config()
         print(self.config)
         with open('files/config.json', 'w') as f:
             f.write(json.dumps(self.config))
 
+    async def parse_command(self, msg):
+        if msg["header"]["messagePurpose"] == "event":
+
+            if msg["body"]["eventName"] == "PlayerMessage" and msg["body"]["properties"]['MessageType'] == 'chat':
+
+                self.log.log(msg)
+
+                raw = message_utils.getChat(msg)
+
+                args = raw.split(" ")
+
+                executor = msg["body"]["properties"]["Sender"]
+
+                if executor == self.log.host:
+                    await self.host_only(args)
+
+                if args[0] == ".info":
+                    await self.ws.send(message_utils.info(ref_strings.mcws.info))
+                    await self.ws.send(message_utils.info(ref_strings.pyversion))
+
+                if args[0] == ".help":
+                    for i in ref_strings.mcws.help:
+                        await self.ws.send(message_utils.info(i + " - " + ref_strings.mcws.help[i]))
+
+                if args[0] == ".function":
+                    arg1 = raw[10:]
+                    if arg1 == "-ls":
+                        for filename in glob.glob("files/functions/*.mcfunction"):
+                            await self.ws.send(message_utils.info(filename))
+                    else:
+                        if os.path.exists("functions/" + arg1 + ".mcfunction"):
+                            with open("functions/" + arg1 + ".mcfunction", "r") as file:
+                                for i in file.readlines():
+                                    await self.ws.send(message_utils.autocmd(i))
+                        else:
+                            await self.ws.send(message_utils.error(ref_strings.file_not_exists))
+
+                if args[0] == ".midi" and import_midiplayer:
+                    try:
+                        await self.player.parse_command(args[1:])
+
+                    except Exception as e:
+                        traceback.print_exc()
+
+                if args[0] == ".sier":
+                    pass
+                    '''
+                    px = 50200
+                    py = 100
+                    pz = 50000
+                    for x in range(-50, 50):
+                        for z in range(-50, 50):
+                            y = x ^ z
+                            await ws.send(setBlock(px + x, py + y, pz + z, "redstone_block"))
+                            time.sleep(0.001)'''
+
+        elif msg["header"]["messagePurpose"] == "commandResponse":
+            pass
+
     async def hello(self):
         # await ws.send(message_utils.info(ref_strings.loading))
-        log = self.modules['ChatLogger']
-        player = self.modules['MidiPlayer']
-        pixelgen = self.modules['PixelArtGenerator']
+        self.log = self.modules['ChatLogger']
+        self.player = self.modules['MidiPlayer']
+        self.pixelgen = self.modules['PixelArtGenerator']
         try:
             while True:
                 data = await self.ws.recv()
                 msg = json.loads(data)
-                if msg["header"]["messagePurpose"] == "event":
-
-                    if msg["body"]["eventName"] == "PlayerMessage" and msg["body"]["properties"][
-                        "Sender"] != self.sender and \
-                            msg["body"]["properties"]['MessageType'] == 'chat':
-
-                        log.log(msg)
-
-                        raw = message_utils.getChat(msg)
-
-                        args = raw.split(" ")
-
-                        executor = msg["body"]["properties"]["Sender"]
-
-                        if executor == log.host:
-
-                            await self.we.parseCmd(args)
-
-                            if args[0] == ".entitycounter":
-                                '''
-                                c=entitycounter.EntityCounter(ws)
-                                c.start()'''
-
-                            if args[0] == ".getscore":
-                                await self.ws.send(message_utils.autocmd("scoreboard players list @s"))
-                                msg2 = json.loads(await self.ws.recv())
-                                match = re.findall(scoreRegex, msg2.get(
-                                    "body").get("statusMessage"))
-                                out = {}
-                                for i in match:
-                                    out[i[2]] = i[4]
-                                print(out)
-
-                            if args[0] == ".pixelart" and import_pixel:
-                                try:
-                                    await pixelgen.parse_command(args[1:])
-                                except FileNotFoundError:
-                                    await self.ws.send(message_utils.error(ref_strings.file_not_exists))
-
-                            if args[0] == ".test":
-                                pass
-
-                            if args[0] == ".debug":
-                                if len(args) == 1:
-                                    continue
-                                if args[1] == '0':
-                                    message_utils.log_command = False
-                                elif args[1] == '1':
-                                    message_utils.log_command = True
-
-                            if args[0] == '.exit':
-                                await self.ws.send(message_utils.info('bye!'))
-                                raise KeyboardInterrupt
-
-                            if args[0] == '.crack':
-                                pass
-                                '''
-                                for i in range(100):
-                                    cmd = next(a)
-                                    print(cmd)
-                                    await ws.send(message_utils.cmd(cmd))
-                                    data = json.loads(await ws.recv())
-                                    if data.get('body').get('statusCode') == 0 or data.get('header').get('messagePurpose') != "commandResponse":
-                                        found.append(cmd)
-                                        print(found)
-                                        continue
-                                    if re.search(findreg, data.get('body').get('statusMessage')) == None:
-                                        found.append(cmd)
-                                        print(found)
-                                        continue
-
-                                offset += 100
-                                config['found'] = found
-                                config['offset'] = offset
-
-                                with open('config.json', 'w') as f:
-                                    f.write(json.dumps(config))
-                                '''
-
-                            if args[0] == '.copy':
-                                origin = worldedit.Position(2, 71, 10)
-                                destination = worldedit.Position(-60, 4, -75)
-                                for i in range(100):
-                                    isEnd = await self.we.isBlock(worldedit.Position(origin.x + i * 2, origin.y - 1,
-                                                                                     origin.z), 'command_block')
-                                    if isEnd:
-                                        break
-                                    for j in range(4):
-                                        for k in range(31):
-                                            detectPosition = worldedit.Position(origin.x + i * 2, origin.y + k,
-                                                                                origin.z + j * 2)
-                                            isBlock = await self.we.isBlock(detectPosition, 'command_block')
-                                            isBlock2 = await self.we.isBlock(detectPosition, 'chain_command_block')
-                                            if isBlock or isBlock2:
-                                                await self.we.copyBlock(detectPosition,
-                                                                        worldedit.Position(destination.x - (j + i * 4),
-                                                                                           destination.y + k,
-                                                                                           destination.z))
-                                            else:
-                                                break
-
-                            if args[0] == '.save':
-                                self.save()
-
-                        if args[0] == ".info":
-                            await self.ws.send(message_utils.info(ref_strings.mcws.info))
-                            await self.ws.send(message_utils.info(ref_strings.pyversion))
-
-                        if args[0] == ".help":
-                            for i in ref_strings.mcws.help:
-                                await self.ws.send(message_utils.info(i + " - " + ref_strings.mcws.help[i]))
-
-                        if args[0] == ".function":
-                            arg1 = raw[10:]
-                            if arg1 == "-ls":
-                                for filename in glob.glob("files/functions/*.mcfunction"):
-                                    await self.ws.send(message_utils.info(filename))
-                            else:
-                                if os.path.exists("functions/" + arg1 + ".mcfunction"):
-                                    with open("functions/" + arg1 + ".mcfunction", "r") as file:
-                                        for i in file.readlines():
-                                            await self.ws.send(message_utils.autocmd(i))
-                                else:
-                                    await self.ws.send(message_utils.error(ref_strings.file_not_exists))
-
-                        if args[0] == ".midi" and import_midiplayer:
-                            try:
-                                await player.parse_command(args[1:])
-
-                            except Exception as e:
-                                traceback.print_exc()
-
-                        if args[0] == ".sier":
-                            pass
-                            '''
-                            px = 50200
-                            py = 100
-                            pz = 50000
-                            for x in range(-50, 50):
-                                for z in range(-50, 50):
-                                    y = x ^ z
-                                    await ws.send(setBlock(px + x, py + y, pz + z, "redstone_block"))
-                                    time.sleep(0.001)'''
-
-                elif msg["header"]["messagePurpose"] == "commandResponse":
-                    pass
-
+                await self.parse_command(msg)
         except (
                 KeyboardInterrupt, websockets.exceptions.ConnectionClosedOK,
                 websockets.exceptions.ConnectionClosedError,
                 websockets.exceptions.ConnectionClosed):
-            player.close()
-            log.close()
+            self.player.close()
+            self.log.close()
             self.save()
             sys.exit()
+
+    async def host_only(self, args):
+        await self.we.parseCmd(args)
+
+        if args[0] == ".getscore":
+            await self.ws.send(message_utils.autocmd("scoreboard players list @s"))
+            msg2 = json.loads(await self.ws.recv())
+            match = re.findall(scoreRegex, msg2.get(
+                "body").get("statusMessage"))
+            out = {}
+            for i in match:
+                out[i[2]] = i[4]
+            print(out)
+
+        if args[0] == ".pixelart" and import_pixel:
+            try:
+                await self.pixelgen.parse_command(args[1:])
+            except FileNotFoundError:
+                await self.ws.send(message_utils.error(ref_strings.file_not_exists))
+
+        if args[0] == ".test":
+            pass
+
+        if args[0] == ".debug":
+            if len(args) == 1:
+                return
+            if args[1] == '0':
+                message_utils.log_command = False
+            elif args[1] == '1':
+                message_utils.log_command = True
+
+        if args[0] == '.exit':
+            await self.ws.send(message_utils.info('bye!'))
+            raise KeyboardInterrupt
+
+        if args[0] == '.copy':
+            origin = worldedit.Position(2, 71, 10)
+            destination = worldedit.Position(-60, 4, -75)
+            for i in range(100):
+                isEnd = await self.we.isBlock(worldedit.Position(origin.x + i * 2, origin.y - 1,
+                                                                 origin.z), 'command_block')
+                if isEnd:
+                    break
+                for j in range(4):
+                    for k in range(31):
+                        detectPosition = worldedit.Position(origin.x + i * 2, origin.y + k,
+                                                            origin.z + j * 2)
+                        isBlock = await self.we.isBlock(detectPosition, 'command_block')
+                        isBlock2 = await self.we.isBlock(detectPosition, 'chain_command_block')
+                        if isBlock or isBlock2:
+                            await self.we.copyBlock(detectPosition,
+                                                    worldedit.Position(destination.x - (j + i * 4),
+                                                                       destination.y + k,
+                                                                       destination.z))
+                        else:
+                            break
+
+        if args[0] == '.save':
+            self.save()
 
 
 if __name__ == '__main__':

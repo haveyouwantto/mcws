@@ -20,8 +20,7 @@ def index():
 
 @app.route('/ajax')
 def ajax():
-    data = {'time': time(), 'config': wsserver.get_config()}
-    return data
+    return {'time': time(), 'info': wsserver.get_data()}
 
 
 @app.route('/setdata')

@@ -250,7 +250,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
                     })
 
                 message_utils.runmain(self.play_inst(
-                    note['pitch'], inst_name, 100, 0))
+                    note['pitch'], inst_name, 75, 0))
                 if note['time'] > 0:
                     if self.config['displayKeyboard']:
                         message_utils.runmain(self.updatekey())
@@ -276,7 +276,7 @@ class MidiPlayer(threading.Thread, FileIOModule):
                         note['time'] * self.mcs['multiplier'] * 0.05)
 
                 message_utils.runmain(self.play_inst(
-                    note['pitch'], inst_name, 100, 0))
+                    note['pitch'], inst_name, 75, 0))
 
     def play_midi(self):
         inst = np.zeros(16, dtype='uint8')
@@ -406,3 +406,8 @@ class MidiPlayer(threading.Thread, FileIOModule):
 
     def close(self):
         self.isClosed = True
+        
+    def get_data(self):
+        data = super(MidiPlayer, self).get_data()
+        data['playing'] = [self.index, self.file_list[self.index]] if self.playing else None
+        return data

@@ -1,11 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <meta charset="UTF-8">
+    <meta name="theme-color" content="#43a047"/>
+    <link href="static/style.css" rel="stylesheet">
     <title>MCWS WebUI</title>
 </head>
-<body>
-    <div id="commands"></div>
-<script src="static/script.js"></script>
+
+<body style="margin: 0px;">
+    <nav class="header shadow">
+        <div id="title">MCWS WebUI</div>
+    </nav>
+    <span class="span">
+        <div class="content side shadow center">
+            <div class="info">
+                <strong>当前时间</strong><br>
+                <div id="time"></div>
+            </div>
+            <br>
+            <div class="info">
+                <strong>命令统计</strong><br>
+                <div id="commands"></div>
+            </div>
+            <br>
+            <div class="info">
+                <strong>操作系统</strong><br>
+                <div id="os"></div>
+            </div>
+            <br>
+            <div class="info">
+                <strong>主机名</strong><br>
+                <div id="hostname"></div>
+            </div>
+            <br>
+            <div class="info">
+                <strong>Python</strong><br>
+                <div id="python"></div>
+            </div>
+        </div>
+        <div class="articles" id="modules">
+        </div>
+    </span>
+    <script src="static/script.js"></script>
 </body>
+
 </html>

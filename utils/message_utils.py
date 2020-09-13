@@ -114,11 +114,13 @@ async def printEntries(ws, entries):
     if entries is not None:
         try:
             start = entries['start']
+            string = '\n'
             for i in range(10):
-                await ws.send(
-                    info(ref_strings.list_format.format(i + start, entries['entries'][i])))
-            await ws.send(
-                info(ref_strings.pagenum_format.format(entries['page'], entries['maxpage'])))
+                string += ref_strings.list_format.format(
+                    i + start, entries['entries'][i])+'\n'
+            string += ref_strings.pagenum_format.format(
+                entries['page'], entries['maxpage'])
+            await ws.send(info(string))
         except IndexError:
             return
     else:
@@ -137,7 +139,7 @@ suffix = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 
 def toSI(n, binaryMode=False):
     if n < 1000:
-        return "{0:.3g}".format(n)
+        return "{0:.3g} ".format(n)
     if binaryMode:
         k = 1024
     else:
