@@ -68,9 +68,15 @@ class BaseModule:
                         await self.commands[i]["onCommand"](args[1:])
                         return
             await self.ws.send(message_utils.error(ref_strings.unknown_command))
+        except AssertionError as e:
+            await self.ws.send(message_utils.error(ref_strings.fatal_exception))
+            traceback.print_exc()
+            sys.exit(-1)
         except Exception as e:
+            await self.ws.send(message_utils.error(ref_strings.exception))
             await self.ws.send(message_utils.error('{0}: {1}'.format(type(e).__name__, e)))
-            traceback.print_exc(file=sys.stdout)
+            await self.ws.recv()
+            traceback.print_exc()
 
     def set_config(self, config):
         self.config = config
@@ -149,8 +155,6 @@ class FileIOModule(BaseModule):
                 await self.ws.send(message_utils.error(ref_strings.file_not_exists))
         except ValueError:
             await self.ws.send(message_utils.error(ref_strings.invaild_id))
-        except Exception as e:
-            await self.ws.send(message_utils.error("Unexpected exception" + str(e)))
 
     async def open(self, index):
         pass

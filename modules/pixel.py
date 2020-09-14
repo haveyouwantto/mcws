@@ -127,14 +127,68 @@ def colorToBlock(color):
         return colors[i]
 
 
+# returns [startX, startY, sizeX, sizeY, color]
+# color format [block, data, intColor]
+def getColorRegion(matrix, startX, startY, sizeX, sizeY):
+    assert sizeX != 0 and sizeY != 0
+    if sizeX == 1 and sizeY == 1:
+        return [
+            [startX, startY, sizeX, sizeY, matrix[startY][startX]]
+        ]
+    else:
+        newSizeX = sizeX // 2
+        newSizeY = sizeY // 2
+        lst = []
+        if sizeX == 1:
+            this = getColorRegion(matrix, startX, startY, 1, newSizeY)
+            down = getColorRegion(matrix, startX, startY + newSizeY, 1, sizeY - newSizeY)
+            if len(this) == 1:
+                color = this[0][4]
+                if len(down) == 1 and down[0][4] == color:
+                    return [
+                        [startX, startY, sizeX, sizeY, color]
+                    ]
+            lst.extend(this)
+            lst.extend(down)
+            return lst
+        elif sizeY == 1:
+            this = getColorRegion(matrix, startX, startY, newSizeX, 1)
+            right = getColorRegion(matrix, startX + newSizeX, startY, sizeX - newSizeX, 1)
+            if len(this) == 1:
+                color = this[0][4]
+                if len(right) == 1 and right[0][4] == color:
+                    return [
+                        [startX, startY, sizeX, sizeY, color]
+                    ]
+            lst.extend(this)
+            lst.extend(right)
+            return lst
+        this = getColorRegion(matrix, startX, startY, newSizeX, newSizeY)
+        right = getColorRegion(matrix, startX + newSizeX, startY, sizeX - newSizeX, newSizeY)
+        down = getColorRegion(matrix, startX, startY + newSizeY, newSizeX, sizeY - newSizeY)
+        rightdown = getColorRegion(matrix, startX + newSizeX, startY + newSizeY, sizeX - newSizeX, sizeY - newSizeY)
+        if len(this) == 1:
+            color = this[0][4]
+            if (len(right) == 1 and right[0][4] == color) and \
+                    (len(down) == 1 and down[0][4] == color) and \
+                    (len(rightdown) == 1 and rightdown[0][4] == color):
+                return [
+                    [startX, startY, sizeX, sizeY, color]
+                ]
+        lst.extend(this)
+        lst.extend(right)
+        lst.extend(down)
+        lst.extend(rightdown)
+        return lst
+
+
 # 以上
 
 class PixelArtGenerator(FileIOModule):
     def __init__(self, ws, we):
         FileIOModule.__init__(self, ws, "files/images/",
-                              (".png", ".jpg", ".bmp"), 'PixelGenerator','Generate pixel art in real time')
+                              (".png", ".jpg", ".bmp"), 'PixelGenerator', 'Generate pixel art in real time')
         self.we = we
-        self.mode = '+x+z'
         self.modes = ['+x+z', '+x-z', '-x+z',
                       '-x-z', '+x-y', '-x-y', '+z-y', '-z-y']
         self.commands['--list']['command'].description = ref_strings.pixel.help['--list']
@@ -153,7 +207,8 @@ class PixelArtGenerator(FileIOModule):
 
         self.default_config = {
             'big': False,
-            'dither': False
+            'dither': False,
+            'mode': '+x+z'
         }
 
     async def set_big(self, args):
@@ -163,7 +218,7 @@ class PixelArtGenerator(FileIOModule):
             elif args[0] == '1':
                 self.config['big'] = True
         else:
-            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
+            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.config['mode'])))
 
     async def set_dither(self, args):
         if len(args) > 0:
@@ -172,7 +227,7 @@ class PixelArtGenerator(FileIOModule):
             elif args[0] == '1':
                 self.config['dither'] = True
         else:
-            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
+            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.config['mode'])))
 
     async def from_url(self, args):
         pos = await self.we.getPlayerBlockPos()
@@ -193,55 +248,59 @@ class PixelArtGenerator(FileIOModule):
         await self.ws.send(message_utils.info("\n".join(self.modes)))
 
     def get_position(self, position, imagesize, imagepos, setblock):
-        if self.mode == '+x+z':
+        if self.config['mode'] == '+x+z':
             pos1 = worldedit.Position(
                 position.x + imagepos[0], position.y, position.z + imagepos[1])
-        elif self.mode == '+x-z':
+        elif self.config['mode'] == '+x-z':
             pos1 = worldedit.Position(
                 position.x + imagepos[0], position.y, position.z - imagepos[1])
-        elif self.mode == '-x+z':
+        elif self.config['mode'] == '-x+z':
             pos1 = worldedit.Position(
                 position.x - imagepos[0], position.y, position.z + imagepos[1])
-        elif self.mode == '-x-z':
+        elif self.config['mode'] == '-x-z':
             pos1 = worldedit.Position(
                 position.x - imagepos[0], position.y, position.z - imagepos[1])
-        elif self.mode == '+x-y':
+        elif self.config['mode'] == '+x-y':
             pos1 = worldedit.Position(position.x + imagepos[0], position.y + imagesize[1] - imagepos[1] - 1,
                                       position.z)
-        elif self.mode == '-x-y':
+        elif self.config['mode'] == '-x-y':
             pos1 = worldedit.Position(position.x - imagepos[0], position.y + imagesize[1] - imagepos[1] - 1,
                                       position.z)
-        elif self.mode == '+z-y':
+        elif self.config['mode'] == '+z-y':
             pos1 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
                                       position.z + imagepos[0])
         else:  # -z-y
             pos1 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
                                       position.z - imagepos[0])
         if not setblock:
-            if self.mode == '+x+z':
+            if self.config['mode'] == '+x+z':
                 pos2 = worldedit.Position(
-                    position.x + imagepos[0] + imagepos[2], position.y, position.z + imagepos[1])
-            elif self.mode == '+x-z':
+                    position.x + imagepos[0] + imagepos[2] - 1, position.y, position.z + imagepos[1] + imagepos[3] - 1)
+            elif self.config['mode'] == '+x-z':
                 pos2 = worldedit.Position(
-                    position.x + imagepos[0] + imagepos[2], position.y, position.z - imagepos[1])
-            elif self.mode == '-x+z':
+                    position.x + imagepos[0] + imagepos[2] - 1, position.y, position.z - imagepos[1] - imagepos[3] + 1)
+            elif self.config['mode'] == '-x+z':
                 pos2 = worldedit.Position(
-                    position.x - imagepos[0] - imagepos[2], position.y, position.z + imagepos[1])
-            elif self.mode == '-x-z':
+                    position.x - imagepos[0] - imagepos[2] + 1, position.y, position.z + imagepos[1] + imagepos[3] - 1)
+            elif self.config['mode'] == '-x-z':
                 pos2 = worldedit.Position(
-                    position.x - imagepos[0] - imagepos[2], position.y, position.z - imagepos[1])
-            elif self.mode == '+x-y':
-                pos2 = worldedit.Position(position.x + imagepos[0] + imagepos[2],
-                                          position.y + imagesize[1] - imagepos[1] - 1, position.z)
-            elif self.mode == '-x-y':
-                pos2 = worldedit.Position(position.x - imagepos[0] - imagepos[2],
-                                          position.y + imagesize[1] - imagepos[1] - 1, position.z)
-            elif self.mode == '+z-y':
-                pos2 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
-                                          position.z + imagepos[0] + imagepos[2])
+                    position.x - imagepos[0] - imagepos[2] + 1, position.y, position.z - imagepos[1] - imagepos[3] + 1)
+            elif self.config['mode'] == '+x-y':
+                pos2 = worldedit.Position(position.x + imagepos[0] + imagepos[2] - 1,
+                                          position.y + imagesize[1] - imagepos[1] - imagepos[3],
+                                          position.z)
+            elif self.config['mode'] == '-x-y':
+                pos2 = worldedit.Position(position.x - imagepos[0] - imagepos[2] + 1,
+                                          position.y + imagesize[1] - imagepos[1] - imagepos[3],
+                                          position.z)
+            elif self.config['mode'] == '+z-y':
+                pos2 = worldedit.Position(position.x,
+                                          position.y + imagesize[1] - imagepos[1] - imagepos[3],
+                                          position.z + imagepos[0] + imagepos[2] - 1)
             else:  # -z-y
-                pos2 = worldedit.Position(position.x, position.y + imagesize[1] - imagepos[1] - 1,
-                                          position.z - imagepos[0] - imagepos[2])
+                pos2 = worldedit.Position(position.x,
+                                          position.y + imagesize[1] - imagepos[1] - imagepos[3],
+                                          position.z - imagepos[0] - imagepos[2] + 1)
             return pos1, pos2
         else:
             return pos1
@@ -249,12 +308,12 @@ class PixelArtGenerator(FileIOModule):
     async def set_mode(self, args):
         if len(args) > 0:
             if args[0] in self.modes:
-                self.mode = args[0]
-                await self.ws.send(message_utils.info(ref_strings.pixel.set_mode.format(self.mode)))
+                self.config['mode'] = args[0]
+                await self.ws.send(message_utils.info(ref_strings.pixel.set_mode.format(self.config['mode'])))
             else:
                 await self.ws.send(message_utils.error(ref_strings.pixel.invaild_mode))
         else:
-            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.mode)))
+            await self.ws.send(message_utils.info(ref_strings.pixel.current_mode.format(self.config['mode'])))
 
     async def open(self, index):
         pos = await self.we.getPlayerBlockPos()
@@ -282,7 +341,7 @@ class PixelArtGenerator(FileIOModule):
                 palimage = Image.new('P', (16, 16))
                 palimage.putpalette(pal * 7)
                 img = img.convert('RGB').quantize(palette=palimage)
-                img.save('cache/test.png', 'png')
+                img.save('files/cache/test.png', 'png')
             except Exception as e:
                 print(e)
                 return
@@ -320,10 +379,10 @@ class PixelArtGenerator(FileIOModule):
     async def draw(self, img, position):
         size = img.size
         pal = img.getpalette()
-        pxs = {}
+        pxs = []
 
         for y in range(size[1]):
-            lastpixel = None
+            pxs.append([])
             for x in range(size[0]):
                 px = img.getpixel((x, y))
 
@@ -341,42 +400,34 @@ class PixelArtGenerator(FileIOModule):
                 elif len(px) == 4:
                     # 检测透明度，如果小于128则不放置方块
                     if px[3] < 0x80:
-                        lastpixel = None
+                        pxs[y].append(None)
                         continue
 
                     # 获取整数颜色值
                     color = (px[0] << 16) | (px[1] << 8) | px[2]
 
+                else:
+                    raise NotImplementedError('Image not supported.')
+
                 blockToPlace = colorToBlock(color)
                 fmt = "{0} {1}".format(blockToPlace[0], blockToPlace[1])
 
-                if fmt in pxs:
-                    if lastpixel == fmt:
-                        pxs[fmt][-1][2] += 1
-                    else:
-                        pxs[fmt].append([x, y, 0])
-                else:
-                    pxs[fmt] = [[x, y, 0]]
+                pxs[y].append(blockToPlace)
 
-                lastpixel = fmt
+        colorMap = getColorRegion(pxs, 0, 0, size[0], size[1])
 
         await self.ws.send(message_utils.info(ref_strings.pixel.start))
 
-        for i in pxs:
-            blockToPlace = i.split(" ")
-            for j in pxs[i]:
-                if j[2] == 0:
-                    pos = self.get_position(position, size, j, True)
-                    await self.we.setblock(pos,
-                                           blockToPlace[0],
-                                           int(blockToPlace[1]))
-                else:
-                    pos = self.get_position(position, size, j, False)
-                    await self.we.fill(pos[0],
-                                       pos[1],
-                                       blockToPlace[0],
-                                       int(blockToPlace[1]))
+        for i in colorMap:
+            if i[4] is None:
+                continue
+            else:
+                pos = self.get_position(position, size, i[0:4], False)
+                await self.we.fill(pos[0],
+                                   pos[1],
+                                   i[4][0],
+                                   i[4][1])
 
-                sleep(0.002)
+                await self.ws.recv()
 
         await self.ws.send(message_utils.info(ref_strings.pixel.finish))

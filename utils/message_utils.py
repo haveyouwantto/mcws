@@ -6,6 +6,8 @@ from static import stats, ref_strings
 from utils import uuidgen
 from user_interface import coloreplace
 
+import traceback
+
 log_command = False
 
 sub = json.dumps({

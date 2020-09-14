@@ -11,6 +11,8 @@ pyversion = 'Python ' + sys.version
 version = ''
 unknown_command = '未知命令。'
 invaild_id = 'ID 无效'
+exception = '发生了一个错误。详情见服务端控制台。'
+fatal_exception = '发生了严重错误'
 
 list_format = '[§c{0}§d] - {1}'
 pagenum_format = '第 {0} 页，共 {1} 页'

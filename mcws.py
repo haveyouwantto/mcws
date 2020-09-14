@@ -174,11 +174,7 @@ class MCWS:
                             await self.ws.send(message_utils.error(ref_strings.file_not_exists))
 
                 if args[0] == ".midi" and import_midiplayer:
-                    try:
-                        await self.player.parse_command(args[1:])
-
-                    except Exception as e:
-                        traceback.print_exc()
+                    await self.player.parse_command(args[1:])
 
                 if args[0] == ".sier":
                     pass
