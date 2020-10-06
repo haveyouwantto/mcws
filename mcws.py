@@ -100,7 +100,7 @@ class MCWS:
             uuidgen._id = self.config['stats']['commands']
         else:
             for module in self.modules:
-                module.config = module.default_config
+                self.modules[module].config = self.modules[module].default_config
 
         print(self.config)
 
