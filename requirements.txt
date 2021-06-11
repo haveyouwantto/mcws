@@ -1,5 +1,5 @@
 requests==2.22.0
-websockets==8.0.2
+websockets==9.1
 mido==1.2.9
 pillow>=8.1.1
 numpy~=1.19.1
