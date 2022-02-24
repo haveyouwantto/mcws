@@ -427,7 +427,6 @@ class PixelArtGenerator(FileIOModule):
                                    pos[1],
                                    i[4][0],
                                    i[4][1])
-
-                await self.ws.recv()
+                sleep(0.001)
 
         await self.ws.send(message_utils.info(ref_strings.pixel.finish))

@@ -97,7 +97,7 @@ class ChatLogger(BaseModule):
                     message_utils.warning('player ' + name + ' not found')
 
             outjson = json.dumps(self.chatmsg)
-            datajs = open(out + 'data.js', 'w', encoding='utf-8-sig')
+            datajs = open(out + '/data.js', 'w', encoding='utf-8-sig')
             datajs.write('let chat=' + outjson + ';')
             datajs.write('init(chat);')
             datajs.close()
