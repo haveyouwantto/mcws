@@ -423,10 +423,17 @@ class PixelArtGenerator(FileIOModule):
                 continue
             else:
                 pos = self.get_position(position, size, i[0:4], False)
-                await self.we.fill(pos[0],
-                                   pos[1],
-                                   i[4][0],
-                                   i[4][1])
-                sleep(0.001)
+                await self.ws.send(message_utils.autocmd('fill %d %d %d %d %d %d %s %d'%(
+                    pos[0].x,
+                    pos[0].y,
+                    pos[0].z,
+                    pos[1].x,
+                    pos[1].y,
+                    pos[1].z,
+                    i[4][0],
+                    i[4][1]
+                )))
+                await self.ws.recv()
+                # sleep(0.1)
 
         await self.ws.send(message_utils.info(ref_strings.pixel.finish))

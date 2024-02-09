@@ -44,7 +44,7 @@ class ChatLogger(BaseModule):
 
     def log(self, parsed):
         ts = time.time()
-        type = parsed['body']['eventName']
+        type = parsed['header']['eventName']
         prop = parsed['body']['properties']
         sender = prop['Sender']
         message = prop['Message']

@@ -37,10 +37,9 @@ class BaseModule:
         self.default_config = {}
 
     async def help(self, args):
-        string = '\n' + '{0} - {1}'.format(self.module_name, self.description)+'\n'
+        await self.ws.send(message_utils.info( '\n' + '{0} - {1}'.format(self.module_name, self.description)+'\n'))
         for i in self.commands:
-            string += str(self.commands[i]["command"])+'\n\u00a7d'
-        await self.ws.send(message_utils.info(string))
+            await self.ws.send(message_utils.info(str(self.commands[i]["command"])))
 
     async def info(self, args):
         pass
@@ -134,11 +133,14 @@ class FileIOModule(BaseModule):
         if len(results) == 0:
             await self.ws.send(message_utils.info(ref_strings.empty_result))
         else:
-            string = '\n'
-            for i in results:
-                string += ref_strings.list_format.format(i[0], i[1])+'\n'
-            await self.ws.send(
-                message_utils.info(string))
+            i = 0
+            for entry in results:
+                if i > 20:
+                    await self.ws.send(message_utils.info("...%d"%(len(results)-20)))
+                    return 
+                await self.ws.send(
+                    message_utils.info(ref_strings.list_format.format(entry[0], entry[1])))
+                i+=1
 
     async def open_file(self, args):
         if len(args) == 0:

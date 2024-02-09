@@ -49,7 +49,7 @@ def cmd(line, uuid):
 
 
 def getChat(msg):
-    return msg["body"]["properties"]["Message"]
+    return msg["body"]["message"]
 
 
 def log(msg):
@@ -57,18 +57,23 @@ def log(msg):
 
 
 def info(msg):
-    print(coloreplace.replace("\u00a7d" + str(msg)))
-    return autocmd("say \u00a7d" + str(msg))
+    print(coloreplace.replace(str(msg)))
+    return autocmd("tellraw @a %s"%(json.dumps(
+        {"rawtext":[{"text":msg}]}
+    )))
 
 
 def warning(msg):
-    print(coloreplace.replace("\u00a7e" + str(msg)))
-    return autocmd("say \u00a7e" + str(msg))
+    return autocmd("tellraw @a %s"%(json.dumps(
+        {"rawtext":[{"text":"\u00a7e"+msg}]}
+    )))
 
 
 def error(msg):
     print(coloreplace.replace("\u00a7c" + str(msg)))
-    return autocmd("say \u00a7c" + str(msg))
+    return autocmd("tellraw @a %s"%(json.dumps(
+        {"rawtext":[{"text":"\u00a7c"+msg}]}
+    )))
 
 
 def drawKeyboard(key, start=0):
@@ -116,13 +121,10 @@ async def printEntries(ws, entries):
     if entries is not None:
         try:
             start = entries['start']
-            string = '\n'
             for i in range(10):
-                string += ref_strings.list_format.format(
-                    i + start, entries['entries'][i])+'\n'
-            string += ref_strings.pagenum_format.format(
-                entries['page'], entries['maxpage'])
-            await ws.send(info(string))
+                await ws.send(info(ref_strings.list_format.format(i + start, entries['entries'][i])))
+            await ws.send(info(ref_strings.pagenum_format.format(
+                entries['page'], entries['maxpage'])))
         except IndexError:
             return
     else:

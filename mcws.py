@@ -13,6 +13,7 @@ import worldedit
 from modules import chat_logger
 from static import stats, ref_strings
 from utils import message_utils, uuidgen
+from user_interface import coloreplace
 
 scoreRegex = r'((- )([\s\S]+?)(: )([-\d]+?)( \()([\s\S][^)]*?)(\)+?))'
 
@@ -38,25 +39,46 @@ except ModuleNotFoundError:
     import_webui = False
     print(ref_strings.import_error.webui)
 
+class WSWrapper:
+    def __init__(self,ws) -> None:
+        self.ws=ws
+
+    async def send(self,data):
+        print(coloreplace.replace("\u00a71> SEND: \t"+data))
+        await self.ws.send(data)
+
+    async def recv(self):
+        result = await self.ws.recv()
+        print(coloreplace.replace("\u00a72< RECV: \t"+result))
+        return result
 
 class MCWS:
 
     async def start(self, ws, path):
-        self.ws = ws
+        self.ws =  WSWrapper(ws)
         self.modules = {}
         self.config = {'stats': {}, 'modules': {}}
         message_utils.log_command = False
+        
+        await ws.send(message_utils.info(ref_strings.loading))
 
+        await self.getHost()
         await self.load_modules()
         await self.load_config()
         await self.listen_event()
         await self.hello()
 
+    async def getHost(self):
+        self.host = 'Player'
+        await self.ws.send(message_utils.autocmd('getlocalplayername'))
+        msg = await self.ws.recv()
+        self.host = json.loads(msg)['body']['localplayername']
+
     async def load_modules(self):
 
-        log = chat_logger.ChatLogger(self.ws)
-        await log.getHost()
-        self.modules[log.module_id] = log
+        # log = chat_logger.ChatLogger(self.ws)
+        # await log.getHost()
+        # self.modules[log.module_id] = log
 
         self.we = worldedit.WorldEdit(self.ws)
 
@@ -138,18 +160,17 @@ class MCWS:
 
     async def parse_command(self, msg):
         if msg["header"]["messagePurpose"] == "event":
+            if msg["header"]["eventName"] == "PlayerMessage":
 
-            if msg["body"]["eventName"] == "PlayerMessage" and msg["body"]["properties"]['MessageType'] == 'chat':
-
-                self.log.log(msg)
+                # self.log.log(msg)
 
                 raw = message_utils.getChat(msg)
 
                 args = raw.split(" ")
 
-                executor = msg["body"]["properties"]["Sender"]
+                executor = msg["body"]["sender"]
 
-                if executor == self.log.host:
+                if executor == self.host:
                     await self.host_only(args)
 
                 if args[0] == ".info":
@@ -193,7 +214,7 @@ class MCWS:
 
     async def hello(self):
         # await ws.send(message_utils.info(ref_strings.loading))
-        self.log = self.modules['ChatLogger']
+        # self.log = self.modules['ChatLogger']
         self.player = self.modules['MidiPlayer']
         self.pixelgen = self.modules['PixelArtGenerator']
         try:
@@ -206,7 +227,7 @@ class MCWS:
                 websockets.exceptions.ConnectionClosedError,
                 websockets.exceptions.ConnectionClosed):
             self.player.close()
-            self.log.close()
+            # self.log.close()
             self.save()
             sys.exit()
 
